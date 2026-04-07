@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 .loader {
   border-width: 2px;
   border-style: solid;

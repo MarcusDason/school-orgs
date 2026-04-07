@@ -9,7 +9,7 @@ import {
   Building2,
   LogOut,
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase/config";
 
@@ -19,6 +19,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
   const [maxHeight, setMaxHeight] = useState("0px");
 
   const navigate = useNavigate();
+  const location = useLocation(); // get current path
 
   useEffect(() => {
     if (menuRef.current) {
@@ -35,6 +36,18 @@ export default function Navbar({ darkMode, setDarkMode }) {
     }
   };
 
+  // Determine button label and action based on current route
+  let authButtonLabel = "Logout";
+  let authButtonAction = handleLogout;
+
+  if (location.pathname === "/login") {
+    authButtonLabel = "Sign Up"; // ✅ on login page, show Sign Up
+    authButtonAction = () => navigate("/signup");
+  } else if (location.pathname === "/signup") {
+    authButtonLabel = "Login"; // ✅ on signup page, show Login
+    authButtonAction = () => navigate("/login");
+  }
+
   const linkClass = ({ isActive }) =>
     `flex items-center gap-2 py-2 px-4 md:py-2 md:px-3 rounded-lg transition-colors
      ${
@@ -45,7 +58,6 @@ export default function Navbar({ darkMode, setDarkMode }) {
 
   return (
     <nav className="sticky top-0 z-50 p-4 flex items-center justify-between relative bg-white dark:bg-gray-800 shadow-md">
-      
       {/* Logo */}
       <div className="flex items-center gap-2">
         <Building2 className="dark:text-white text-black" />
@@ -66,25 +78,25 @@ export default function Navbar({ darkMode, setDarkMode }) {
           Organizations
         </NavLink>
 
-        {/* 🌙 Dark Mode */}
+        {/* Dark Mode */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          {darkMode ? (
-            <Sun size={20} className="text-yellow-400" />
-          ) : (
-            <Moon size={20} />
-          )}
+          {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
         </button>
 
-        {/* 🚪 Logout */}
+        {/* Auth Button */}
         <button
-          onClick={handleLogout}
-          className="flex items-center gap-2 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600"
+          onClick={authButtonAction}
+          className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
+            authButtonLabel === "Logout"
+              ? "bg-red-500 text-white hover:bg-red-600"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
         >
-          <LogOut size={18} />
-          Logout
+          {authButtonLabel === "Logout" && <LogOut size={18} />}
+          {authButtonLabel}
         </button>
       </div>
 
@@ -94,19 +106,11 @@ export default function Navbar({ darkMode, setDarkMode }) {
           onClick={() => setDarkMode(!darkMode)}
           className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          {darkMode ? (
-            <Sun size={20} className="text-yellow-400" />
-          ) : (
-            <Moon size={20} />
-          )}
+          {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
         </button>
 
         <button onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? (
-            <X size={24} className="text-black dark:text-white" />
-          ) : (
-            <Menu size={24} className="text-black dark:text-white" />
-          )}
+          {isOpen ? <X size={24} className="text-black dark:text-white" /> : <Menu size={24} className="text-black dark:text-white" />}
         </button>
       </div>
 
@@ -130,13 +134,17 @@ export default function Navbar({ darkMode, setDarkMode }) {
           Organizations
         </NavLink>
 
-        {/* Logout Mobile */}
+        {/* Auth Mobile */}
         <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 py-2 px-4 text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+          onClick={authButtonAction}
+          className={`w-full flex items-center gap-2 py-2 px-4 rounded ${
+            authButtonLabel === "Logout"
+              ? "text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              : "text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+          }`}
         >
-          <LogOut size={18} />
-          Logout
+          {authButtonLabel === "Logout" && <LogOut size={18} />}
+          {authButtonLabel}
         </button>
       </div>
     </nav>
