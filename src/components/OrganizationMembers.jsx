@@ -5,6 +5,8 @@ import { auth, db } from "../firebase/config";
 import { ref, get, query, orderByChild, equalTo, onValue } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
 
+import MemberModal from "./MemberModal";
+
 export default function OrganizationMembers({
   members = [],
   org,
@@ -28,12 +30,6 @@ export default function OrganizationMembers({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
-
-  const [newMember, setNewMember] = useState({
-    fullName: "",
-    position: "Member",
-    profilePic: "",
-  });
 
   // 🎯 ROLE PRIORITY ORDER
   const rolePriority = {
@@ -102,31 +98,26 @@ export default function OrganizationMembers({
     setOpenMenuIndex(openMenuIndex === index ? null : index);
   };
 
-  const handleAddMember = async () => {
+  const handleAddMember = async (memberData) => {
     if (!userCanManage) {
       alert("You are not allowed to manage members.");
       return;
     }
-    if (!newMember.fullName.trim()) return;
+    if (!memberData.fullName.trim()) return;
 
     const existingPresident = members.find(
       (m) =>
         m.position?.toLowerCase() === "president" &&
-        m !== editingMember // allow editing same president
+        m !== editingMember
     );
 
-    // 🚫 BLOCK if trying to create another president
-    if (
-      newMember.position === "President" &&
-      existingPresident
-    ) {
+    if (memberData.position === "President" && existingPresident) {
       const confirmChange = window.confirm(
         `There is already a President (${existingPresident.fullName}).\n\nDo you want to replace them?`
       );
-
       if (!confirmChange) return;
 
-      // 🔥 Demote existing president
+      // Demote existing president
       await onEditMember?.({
         ...existingPresident,
         position: "Member",
@@ -134,29 +125,23 @@ export default function OrganizationMembers({
     }
 
     if (isEditMode && editingMember) {
-      // ✅ EDIT
+      // EDIT
       await onEditMember?.({
         ...editingMember,
-        ...newMember,
+        ...memberData,
       });
     } else {
-      // ✅ ADD
+      // ADD
       await onAddMember?.({
-        ...newMember,
+        ...memberData,
         number: Date.now(),
       });
     }
 
-    // RESET
-    setNewMember({
-      fullName: "",
-      position: "Member",
-      profilePic: "",
-    });
-
+    // Close modal
+    setIsModalOpen(false);
     setEditingMember(null);
     setIsEditMode(false);
-    setIsModalOpen(false);
   };
 
   return (
@@ -171,11 +156,6 @@ export default function OrganizationMembers({
             onClick={() => {
               setIsEditMode(false);
               setEditingMember(null);
-              setNewMember({
-                fullName: "",
-                position: "Member",
-                profilePic: "",
-              });
               setIsModalOpen(true);
             }}
             className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -236,11 +216,6 @@ export default function OrganizationMembers({
                     <button
                       onClick={() => {
                         setEditingMember(member);
-                        setNewMember({
-                          fullName: member.fullName,
-                          position: member.position,
-                          profilePic: member.profilePic,
-                        });
                         setIsEditMode(true);
                         setIsModalOpen(true);
                         setOpenMenuIndex(null);
@@ -312,140 +287,21 @@ export default function OrganizationMembers({
       )}
 
       {/* ================= MODAL ================= */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4 dark:text-white">
-              {isEditMode ? "Edit Member" : "Add Member"}
-            </h2>
-
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={newMember.fullName}
-              onChange={(e) =>
-                setNewMember({ ...newMember, fullName: e.target.value })
-              }
-              className="w-full p-2 mb-3 border rounded dark:bg-gray-700 dark:text-white"
-            />
-
-            <div className="mb-3 flex gap-4 items-center">
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                    const file = e.target.files[0];
-                      if (!file || !file.type.startsWith("image/")) return;
-
-                      try {
-                        // 🔥 1. COMPRESS IMAGE (same as AddOrganization)
-                        const compressedFile = await imageCompression(file, {
-                          maxSizeMB: 0.2,
-                          maxWidthOrHeight: 300,
-                          useWebWorker: true,
-                        });
-
-                        // 🔥 2. LOAD IMAGE
-                        const img = document.createElement("img");
-                        img.src = URL.createObjectURL(compressedFile);
-
-                        await new Promise((resolve) => (img.onload = resolve));
-
-                        // 🔥 3. FACE DETECTION
-                        await loadModels();
-                        const detections = await detectFace(img);
-
-                        if (detections.length === 0) {
-                          alert("No human face detected.");
-                          return;
-                        }
-
-                        // 🔥 4. CONVERT TO BASE64
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setNewMember((prev) => ({
-                            ...prev,
-                            profilePic: reader.result,
-                          }));
-                        };
-
-                        reader.readAsDataURL(compressedFile);
-
-                      } catch (err) {
-                        console.error("Image error:", err);
-                      }
-                    }}
-                    className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-                />
-
-                {/* Preview */}
-                {newMember.profilePic && (
-                    <img
-                    src={newMember.profilePic}
-                    alt="Preview"
-                    className="w-20 h-20 mt-2 object-cover border dark:border-gray-600"
-                    />
-                )}
-            </div>
-
-            <select
-              value={newMember.position}
-              onChange={(e) =>
-                setNewMember({ ...newMember, position: e.target.value })
-              }
-              className="w-full p-2 mb-4 border rounded dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">Select Position</option>
-
-              {/* Unique roles */}
-              <option
-                disabled={
-                  members.some(
-                    (m) =>
-                      m.position === "President" &&
-                      m !== editingMember
-                  ) && newMember.position !== "President"
-                }
-              >
-                President
-              </option>
-
-              <option
-                disabled={
-                  members.some(
-                    (m) =>
-                      m.position === "Vice President" &&
-                      m !== editingMember
-                  ) && newMember.position !== "Vice President"
-                }
-              >
-                Vice President
-              </option>
-
-              {/* Non-unique */}
-              <option>Secretary</option>
-              <option>Treasurer</option>
-              <option>Member</option>
-            </select>
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-3 py-1 border rounded dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-white"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={handleAddMember}
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-              >
-                {isEditMode ? "Update" : "Add"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MemberModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={async (memberData) => {
+          if (isEditMode && editingMember) {
+            await onEditMember({ ...editingMember, ...memberData });
+          } else {
+            await onAddMember({ ...memberData, number: Date.now() });
+          }
+          setIsModalOpen(false); // close after submit
+        }}
+        editingMember={editingMember}
+        isEditMode={isEditMode}
+        members={members}
+      />
     </div>
   );
 }
