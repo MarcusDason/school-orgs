@@ -139,14 +139,13 @@ export default function AddOrganization() {
             orgId: orgId,
         });
 
-        memberCount++; // ✅ increment
+        memberCount++;
         }
 
-        // ✅ now save organization with correct count
         await set(newOrgRef, {
         name,
         description,
-        image: "",
+        image: logoPreview,
         members: memberCount, // ✅ correct total
         dateAdded: new Date().toISOString(),
         });

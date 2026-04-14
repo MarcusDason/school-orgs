@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { FaUsers, FaUserTie, FaCalendarAlt } from "react-icons/fa";
 import { db } from "../firebase/config";
 import { ref, get, update, onValue, off, remove, push, set } from "firebase/database";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase/config";
+import { ImageIcon } from "lucide-react";
+
+
+import { Edit } from "lucide-react";
 
 // Components
 import OrganizationAbout from "../components/OrganizationAbout";
 import EventsSection from "../components/EventsSection";
 import OrganizationMembers from "../components/OrganizationMembers";
 import OrganizationPhotos from "../components/OrganizationPhotos";
+import OrganizationSettings from "../components/OrganizationSettings";
 
 export default function OrganizationDetail() {
   const { id } = useParams();
@@ -20,6 +26,11 @@ export default function OrganizationDetail() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("current");
   const [members, setMembers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isMember, setIsMember] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const [loadingMembers, setLoadingMembers] = useState(true);
+  const [permissions, setPermissions] = useState({});
 
   // ✅ Persist active page in localStorage
   const [activeTabPage, setActiveTabPage] = useState(() => {
@@ -73,30 +84,89 @@ export default function OrganizationDetail() {
   }, [id]);
 
   useEffect(() => {
-  const membersRef = ref(db, "members");
+    const membersRef = ref(db, "members");
 
-  const unsubscribe = onValue(membersRef, (snapshot) => {
-    if (snapshot.exists()) {
-      const data = Object.entries(snapshot.val()).map(
-        ([idKey, value]) => ({
-          id: idKey,
-          ...value,
-        })
-      );
+    const unsubscribe = onValue(membersRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = Object.entries(snapshot.val()).map(
+          ([idKey, value]) => ({
+            id: idKey,
+            ...value,
+          })
+        );
 
-      // ✅ filter only members of this org
-      const filteredMembers = data.filter(
-        (m) => m.orgId === id
-      );
+        const filteredMembers = data.filter((m) => m.orgId === id);
+        setMembers(filteredMembers);
+      } else {
+        setMembers([]);
+      }
+      setLoadingMembers(false); // ✅ mark members as loaded
+    });
 
-      setMembers(filteredMembers);
+    return () => off(membersRef);
+  }, [id]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+        setIsMember(false);
+        setUserRole(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!currentUser || loadingMembers) return;
+
+    const member = members.find((m) => m.userId === currentUser.uid || m.uid === currentUser.uid);
+
+    if (member) {
+      setIsMember(true);
+      setUserRole(member.position || "Member");
     } else {
-      setMembers([]);
+      // Not a member, check if admin
+      // fetch the user from the database
+      get(ref(db, `users/${currentUser.uid}`))
+        .then(snapshot => {
+          if (snapshot.exists()) {
+            const userData = snapshot.val();
+            if (userData.role === "admin") {
+              setIsMember(true);       // admins can edit even if not a member
+              setUserRole("Admin");
+            } else {
+              setIsMember(false);
+              setUserRole(null);
+            }
+          } else {
+            setIsMember(false);
+            setUserRole(null);
+          }
+        });
     }
-  });
+  }, [currentUser, members, loadingMembers]);
 
-  return () => off(membersRef);
-}, [id]);
+  useEffect(() => {
+    const permRef = ref(db, `permissions/${id}`);
+
+    const unsubscribe = onValue(permRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setPermissions(snapshot.val());
+      } else {
+        setPermissions({});
+      }
+    });
+
+    return () => off(permRef);
+  }, [id]);
+
+console.log("currentUser:", currentUser);
+console.log("members:", members);
+console.log("found member:", members.find(m => m.uid === currentUser?.uid));
 
   if (loading)
     return (
@@ -189,52 +259,57 @@ export default function OrganizationDetail() {
     });
   };
 
+  console.log(userRole);
+
   return (
     <div className="max-w-7xl mx-auto p-6 mt-8 min-h-screen flex flex-col">
       {/* Back Button */}
+      
+
+
+    {/* Header */}
+    <div className="relative w-full h-48 sm:h-64 mb-8">
+      {/* Background Image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage: `url(${org.image || ""})`,
+          filter: "brightness(50%)",
+          backgroundColor: "#ccc",
+        }}
+      />
+
+      {/* Profile image wrapper */}
+      <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2">
+        {/* Circle */}
+        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg relative">
+          {org.image ? (
+            <img
+              src={org.image}
+              alt="Organization"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-500">
+              <ImageIcon className="w-12 h-12" />
+            </div>
+          )}
+        </div>
+
+        {/* Edit Icon slightly overlapping */}
+        <div className="absolute top-0 right-0 transform translate-x-1/8 -translate-y-1/8 z-20">
+          {isMember && (userRole === "President" || userRole === "Admin") && (
+            <div className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg cursor-pointer">
+              <Edit className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+
       <Link to="/organizations" className="text-black dark:text-white mb-4 inline-block">
         ← Back to Organizations
       </Link>
-
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-8 gap-4">
-        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300">
-          <FaUsers size={28} />
-        </div>
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold dark:text-white">{org.name}</h1>
-          <p className="mt-4 mb-6 text-gray-700 dark:text-gray-300">{org.description}</p>
-          <div className="flex flex-wrap gap-4 text-gray-600 dark:text-gray-300 text-sm">
-            <div className="flex items-center gap-2">
-              <FaUsers /> 
-              <span>
-                {members.length} Members
-              </span>
-            </div>
-            {president && (
-              <div className="flex items-center gap-2">
-                <FaUserTie />
-                <span>
-                  President: {president.fullName || "N/A"}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <FaCalendarAlt />{" "}
-              <span>
-                Founded{" "}
-                {org.dateAdded
-                  ? new Date(org.dateAdded).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })
-                  : "Unknown"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Tabs for About / Events */}
       <div className="flex gap-4 mb-4">
@@ -279,11 +354,30 @@ export default function OrganizationDetail() {
         >
           Photos
         </button>
+
+        <button
+          onClick={() => setActiveTabPage("settings")}
+          className={`px-4 py-2 rounded-full transition ${
+            activeTabPage === "settings"
+              ? "bg-blue-600 text-white"
+              : "bg-white dark:bg-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+          }`}
+        >
+          Settings
+        </button>
       </div>
 
       {/* Render About or Events */}
-      {activeTabPage === "about" ? (
-          <OrganizationAbout org={org} onSave={handleSaveOrg} />
+      {activeTabPage === "settings" ? (
+          <OrganizationSettings 
+            org={org} 
+            onSave={handleSaveOrg} 
+            permissions={permissions}
+            orgId={id}
+          />
+         ) : 
+        activeTabPage === "about" ? (
+          <OrganizationAbout org={org} members={members} onSave={handleSaveOrg}/>
         ) : activeTabPage === "members" ? (
           <OrganizationMembers
               members={members}

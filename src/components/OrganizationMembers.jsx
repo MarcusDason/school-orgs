@@ -213,7 +213,7 @@ export default function OrganizationMembers({
                   <div className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-lg shadow-lg z-50">
 
                     {/* ✏️ EDIT */}
-                    <button
+                    {/* <button
                       onClick={() => {
                         setEditingMember(member);
                         setIsEditMode(true);
@@ -223,7 +223,7 @@ export default function OrganizationMembers({
                       className="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm dark:text-white"
                     >
                       ✏️ Edit
-                    </button>
+                    </button> */}
 
                     {/* ⭐ PROMOTE */}
                     <button
@@ -290,17 +290,16 @@ export default function OrganizationMembers({
       <MemberModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSubmit={async (memberData) => {
-          if (isEditMode && editingMember) {
-            await onEditMember({ ...editingMember, ...memberData });
-          } else {
-            await onAddMember({ ...memberData, number: Date.now() });
-          }
-          setIsModalOpen(false); // close after submit
+        onSubmit={async (selectedUser) => {
+          await onAddMember?.({
+            ...selectedUser,
+            orgId: org.id,
+            position: "Member",
+            number: Date.now(), // optional unique id
+          });
+          setIsModalOpen(false);
         }}
-        editingMember={editingMember}
-        isEditMode={isEditMode}
-        members={members}
+        members={orgMembers} // pass current members to exclude from search
       />
     </div>
   );
