@@ -164,9 +164,9 @@ export default function OrganizationDetail() {
     return () => off(permRef);
   }, [id]);
 
-console.log("currentUser:", currentUser);
-console.log("members:", members);
-console.log("found member:", members.find(m => m.uid === currentUser?.uid));
+// console.log("currentUser:", currentUser);
+// console.log("members:", members);
+// console.log("found member:", members.find(m => m.uid === currentUser?.uid));
 
   if (loading)
     return (
@@ -262,50 +262,46 @@ console.log("found member:", members.find(m => m.uid === currentUser?.uid));
   console.log(userRole);
 
   return (
-    <div className="max-w-7xl mx-auto p-6 mt-8 min-h-screen flex flex-col">
-      {/* Back Button */}
-      
+    <div className="max-w-7xl mx-auto min-h-screen flex flex-col">
+      {/* Header */}
+      <div className="relative w-full h-48 sm:h-64 mb-8">
+        {/* Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: `url(${org.image || ""})`,
+            filter: "brightness(50%)",
+            backgroundColor: "#ccc",
+          }}
+        />
 
+        {/* Profile image wrapper */}
+        <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2">
+          {/* Circle */}
+          <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg relative">
+            {org.image ? (
+              <img
+                src={org.image}
+                alt="Organization"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-500">
+                <ImageIcon className="w-12 h-12" />
+              </div>
+            )}
+          </div>
 
-    {/* Header */}
-    <div className="relative w-full h-48 sm:h-64 mb-8">
-      {/* Background Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{
-          backgroundImage: `url(${org.image || ""})`,
-          filter: "brightness(50%)",
-          backgroundColor: "#ccc",
-        }}
-      />
-
-      {/* Profile image wrapper */}
-      <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-1/2">
-        {/* Circle */}
-        <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white dark:border-gray-700 shadow-lg relative">
-          {org.image ? (
-            <img
-              src={org.image}
-              alt="Organization"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 text-gray-500">
-              <ImageIcon className="w-12 h-12" />
-            </div>
-          )}
-        </div>
-
-        {/* Edit Icon slightly overlapping */}
-        <div className="absolute top-0 right-0 transform translate-x-1/8 -translate-y-1/8 z-20">
-          {isMember && (userRole === "President" || userRole === "Admin") && (
-            <div className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg cursor-pointer">
-              <Edit className="w-5 h-5 text-gray-700 dark:text-gray-200" />
-            </div>
-          )}
+          {/* Edit Icon slightly overlapping */}
+          <div className="absolute top-0 right-0 transform translate-x-1/8 -translate-y-1/8 z-20">
+            {isMember && (userRole === "President" || userRole === "Admin") && (
+              <div className="bg-white dark:bg-gray-800 rounded-full p-2 shadow-lg cursor-pointer">
+                <Edit className="w-5 h-5 text-gray-700 dark:text-gray-200" />
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
 
       <Link to="/organizations" className="text-black dark:text-white mb-4 inline-block">
         ← Back to Organizations

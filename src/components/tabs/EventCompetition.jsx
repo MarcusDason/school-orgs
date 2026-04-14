@@ -70,7 +70,9 @@ export default function EventCompetition({
   //   }
   // };
 
-
+  console.log(userCanEdit)
+  console.log("MODAL OPEN:", isMatchModalOpen);
+  
 
 
   return (

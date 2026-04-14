@@ -8,8 +8,11 @@ import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "fire
 import EventCenter from "../components/EventCenter";
 import AddCompetitionModal from "../components/AddCompetitionModal";
 import { onAuthStateChanged } from "firebase/auth";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function EventDetail() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [orgMembers, setOrgMembers] = useState([]);
   const [isMember, setIsMember] = useState(false);
@@ -77,7 +80,7 @@ useEffect(() => {
 }, [currentUser, organization]);
 
 // Determine if user can edit
-const canEdit = userRole === "admin" || isMember;
+  const canEdit = isMember || userRole === "admin";
 
  useEffect(() => {
   async function fetchEventAndOrganization() {
@@ -111,10 +114,10 @@ const canEdit = userRole === "admin" || isMember;
 }, [eventId]);
 
 
-console.log("currentUser:", currentUser);
-console.log("userRole:", userRole);
-console.log("isMember:", isMember);
-console.log("canEdit:", canEdit);
+// console.log("currentUser:", currentUser);
+// console.log("userRole:", userRole);
+// console.log("isMember:", isMember);
+// console.log("canEdit:", canEdit);
 
   if (loading) return (
     <div className="flex justify-center items-center h-screen">
@@ -307,7 +310,7 @@ console.log("canEdit:", canEdit);
   };
 
   const openCompetitionModal = () => {
-    if (!userRole || !["admin", "member"].includes(userRole)) {
+    if (!canEdit) {
       alert("Only members or admins can add competitions.");
       return;
     }
@@ -321,7 +324,7 @@ console.log("canEdit:", canEdit);
   };
 
   const handleAddMatch = async (newMatch) => {
-    if (!["admin", "member"].includes(userRole)) {
+    if (!canEdit){
       alert("Only members or admins can add matches.");
       return;
     }
@@ -463,13 +466,19 @@ console.log("canEdit:", canEdit);
 
       {/* Sticky Back Link */}
       <div className="sticky top-16 z-50 mb-6">
-        <Link
-          to={`/organizations/${orgId}`}
-          className="flex items-center gap-2 text-black dark:text-white inline-block bg-white dark:bg-gray-800 shadow p-4 px-6"
-        >
+          <button
+              onClick={() => {
+                if (location.state?.from === "dashboard") {
+                  navigate("/");
+                } else {
+                  navigate(`/organizations/${orgId}`);
+                }
+              }}
+              className="flex items-center gap-2 text-black dark:text-white inline-block bg-white dark:bg-gray-800 shadow p-4 px-6"
+            >
           <MoveRightIcon className="w-4 h-4 rotate-180" />
-          Back to Organization
-        </Link>
+          Back
+        </button>
       </div>
 
       <div className="flex flex-col lg:flex-row max-w-full mx-auto px-6 gap-6">
