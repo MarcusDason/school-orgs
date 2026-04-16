@@ -32,7 +32,7 @@ export default function Login() {
       className="flex items-center justify-center bg-cover bg-center relative px-4"
       style={{
         backgroundImage: `url(${bgImage})`,
-        height: "calc(100vh - 80px)" // 👈 100% viewport minus navbar height
+        height: "calc(100vh - 80px)"
       }}
     >
       {/* Overlay */}

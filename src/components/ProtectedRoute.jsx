@@ -16,9 +16,7 @@ export default function ProtectedRoute({ children }) {
     return () => unsubscribe();
   }, []);
 
-  if (loading) {
-    return <p className="text-center mt-10">Loading...</p>;
-  }
+  if (loading) return null;
 
   return user ? children : <Navigate to="/login" />;
 }

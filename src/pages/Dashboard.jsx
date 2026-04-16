@@ -17,7 +17,8 @@ export default function Dashboard() {
 
   const [posts, setPosts] = useState([])
   const [role, setRole] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(true)
   const [expandedPosts, setExpandedPosts] = useState(new Set())
 
   // ================= ROLE =================
@@ -33,7 +34,7 @@ export default function Dashboard() {
       } else {
         setRole("user")
       }
-      setLoading(false)
+      setAuthLoading(false)
     })
 
     return () => unsubscribe()
@@ -64,52 +65,46 @@ export default function Dashboard() {
 
   // ================= FETCH DATA =================
   useEffect(() => {
-    const eventsRef = ref(db, "events")
-    const orgRef = ref(db, "organizations")
+    if (authLoading) return
 
-    let orgCache = {}
+    const fetchData = async () => {
+      try {
+        const [eventsSnap, orgSnap] = await Promise.all([
+          get(ref(db, "events")),
+          get(ref(db, "organizations")),
+        ])
 
-    const unsubOrg = onValue(orgRef, (orgSnap) => {
-      if (orgSnap.exists()) {
-        orgCache = orgSnap.val()
+        const eventsData = eventsSnap.val() || {}
+        const orgData = orgSnap.val() || {}
+
+        const allPosts = Object.entries(eventsData).map(([id, event]) => {
+          const org = orgData[event.orgId] || {}
+
+          return {
+            id,
+            orgId: event.orgId,
+            orgName: org.name || "Organization",
+            orgImage: org.image || null,
+            title: event.title,
+            description: event.description,
+            image: event.image,
+            date: event.startDate,
+            status: getEventStatus(event.startDate, event.endDate),
+          }
+        })
+
+        allPosts.sort((a, b) => new Date(b.date) - new Date(a.date))
+
+        setPosts(allPosts)
+      } catch (err) {
+        console.error("Error loading data:", err)
+      } finally {
+        setDataLoading(false)
       }
-    })
-
-    const unsubEvents = onValue(eventsRef, (snap) => {
-      if (!snap.exists()) {
-        setPosts([])
-        return
-      }
-
-      const data = snap.val()
-
-      const allPosts = Object.entries(data).map(([id, event]) => {
-        const org = orgCache[event.orgId] || {}
-
-        const status = getEventStatus(event.startDate, event.endDate)
-
-        return {
-          id,
-          orgId: event.orgId,
-          orgName: org.name || "Organization",
-          orgImage: org.image || null,
-          title: event.title,
-          description: event.description,
-          image: event.image,
-          date: event.startDate,
-          status,
-        }
-      })
-
-      allPosts.sort((a, b) => new Date(b.date) - new Date(a.date))
-      setPosts(allPosts)
-    })
-
-    return () => {
-      off(eventsRef)
-      off(orgRef)
     }
-  }, [])
+
+    fetchData()
+  }, [authLoading])
 
   const stats = {
     organizations: 12,
@@ -130,7 +125,51 @@ export default function Dashboard() {
     })
   }
 
-  if (loading) return <p className="p-6">Loading...</p>
+  if (authLoading || dataLoading) {
+    return (
+      <div className="p-6 bg-gray-100 dark:bg-gray-900 min-h-screen">
+        <div className="max-w-2xl mx-auto space-y-6">
+          
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow overflow-hidden animate-pulse"
+            >
+              {/* HEADER */}
+              <div className="flex items-center gap-3 p-4">
+                <div className="w-11 h-11 rounded-full bg-gray-300 dark:bg-gray-700"></div>
+
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-32 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                  <div className="h-2 w-20 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                </div>
+
+                <div className="h-5 w-16 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
+              </div>
+
+              {/* CONTENT */}
+              <div className="px-4 pb-3 space-y-2">
+                <div className="h-4 w-3/4 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                <div className="h-3 w-full bg-gray-200 dark:bg-gray-600 rounded"></div>
+                <div className="h-3 w-5/6 bg-gray-200 dark:bg-gray-600 rounded"></div>
+              </div>
+
+              {/* IMAGE */}
+              <div className="w-full h-48 bg-gray-300 dark:bg-gray-700"></div>
+
+              {/* ACTIONS */}
+              <div className="flex justify-around p-3 border-t">
+                <div className="h-3 w-12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                <div className="h-3 w-12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+                <div className="h-3 w-12 bg-gray-300 dark:bg-gray-700 rounded"></div>
+              </div>
+            </div>
+          ))}
+
+        </div>
+      </div>
+    )
+  }
 
   const isAdmin = role?.toLowerCase() === "admin"
 
@@ -170,8 +209,15 @@ export default function Dashboard() {
             >
 
               {/* HEADER */}
-              <div className="flex items-center gap-3 p-4">
-                <div className="w-11 h-11 rounded-full overflow-hidden bg-gray-200">
+              <div className="flex items-center gap-3 p-4">  
+                {/* PROFILE IMAGE */}
+                <div
+                  className="w-11 h-11 rounded-full overflow-hidden bg-gray-200 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate(`/organizations/${post.orgId}`)
+                  }}
+                >
                   {post.orgImage ? (
                     <img src={post.orgImage} className="w-full h-full object-cover" />
                   ) : (
@@ -181,8 +227,15 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-800 dark:text-white">
+                {/* ORG NAME */}
+                <div
+                  className="flex-1 cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate(`/organizations/${post.orgId}`)
+                  }}
+                >
+                  <p className="font-semibold text-gray-800 dark:text-white hover:underline">
                     {post.orgName}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -226,7 +279,7 @@ export default function Dashboard() {
                 {post.description?.length > 120 && (
                   <button
                     onClick={(e) => {
-                      e.stopPropagation() // prevents navigation to event page
+                      e.stopPropagation()
                       toggleExpand(post.id)
                     }}
                     className="text-blue-500 text-xs mt-1 hover:underline"
@@ -243,7 +296,7 @@ export default function Dashboard() {
                     src={post.image}
                     alt="event"
                     className="w-full max-h-[420px] object-cover"
-                  />
+                  />/
                 </div>
               )}
 

@@ -51,25 +51,23 @@ export default function EventDetail() {
 
 // ==================== CHECK MEMBERSHIP & ROLE ====================
 useEffect(() => {
-  if (!currentUser || !organization) return; // ensure org is loaded
+  if (!currentUser || !organization) return;
 
   async function fetchMembershipAndRole() {
     try {
-      // 1️⃣ Get current user's role from users table
       const userSnap = await get(ref(db, `users/${currentUser.uid}`));
       const mainUserRole = userSnap.exists() ? userSnap.val().role : "user";
 
-      // 2️⃣ Get all members of this org
       const membersSnap = await get(ref(db, "members"));
       const membersData = membersSnap.exists() ? Object.values(membersSnap.val()) : [];
 
-      // 3️⃣ Check if current user is a member of this org
+
       const isOrgMember = membersData.some(
         (member) => member.uid === currentUser.uid && member.orgId === organization.id
       );
 
-      setIsMember(isOrgMember);   // true if user is a member of this org
-      setUserRole(mainUserRole);  // admin/user role
+      setIsMember(isOrgMember); 
+      setUserRole(mainUserRole);
 
     } catch (err) {
       console.error("Error fetching membership:", err);
