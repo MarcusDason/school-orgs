@@ -9,6 +9,7 @@ import {
   Building2,
   LogOut,
   Briefcase,
+  House
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -69,8 +70,8 @@ export default function Navbar({ darkMode, setDarkMode }) {
       {/* Desktop */}
       <div className="hidden md:flex items-center gap-3">
         <NavLink to="/" className={linkClass}>
-          <LayoutDashboard size={20} />
-          Dashboard
+          <House size={20} />
+          Home
         </NavLink>
 
         <NavLink to="/organizations" className={linkClass}>
