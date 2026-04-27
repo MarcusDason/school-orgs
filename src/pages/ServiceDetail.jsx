@@ -11,6 +11,8 @@ import {
   CheckCircle,
   ImagePlus,
   X,
+  FilePlus,
+  Download
 } from "lucide-react";
 
 export default function ServiceDetail() {
@@ -142,6 +144,98 @@ export default function ServiceDetail() {
     showToast("Step updated successfully!");
   };
 
+  const handleStepFile = (file, index) => {
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      const raw = service.stepFiles?.[index];
+
+      const existingFiles = Array.isArray(raw)
+        ? raw
+        : raw
+        ? [raw]
+        : [];
+
+      const updated = {
+        ...(service.stepFiles || {}),
+        [index]: [
+          ...existingFiles,
+          {
+            name: file.name,
+            data: reader.result,
+          },
+        ],
+      };
+
+      await update(ref(db, `services/${id}`), {
+        stepFiles: updated,
+      });
+
+      showToast("File added!");
+    };
+
+    reader.readAsDataURL(file);
+  };
+
+  const handleDeleteFile = async (stepIndex, fileIndex) => {
+    const rawFiles = service.stepFiles?.[stepIndex];
+
+    // ✅ normalize to array
+    const files = Array.isArray(rawFiles)
+      ? rawFiles
+      : rawFiles
+      ? [rawFiles]
+      : [];
+
+    const updatedFiles = files.filter((_, i) => i !== fileIndex);
+
+    const updated = {
+      ...(service.stepFiles || {}),
+      [stepIndex]: updatedFiles,
+    };
+
+    await update(ref(db, `services/${id}`), {
+      stepFiles: updated,
+    });
+
+    showToast("File deleted!");
+  };
+
+  const handleReplaceFile = (file, stepIndex, fileIndex) => {
+    const reader = new FileReader();
+
+    reader.onloadend = async () => {
+      const raw = service.stepFiles?.[stepIndex];
+
+      // ✅ normalize
+      const files = Array.isArray(raw)
+        ? raw
+        : raw
+        ? [raw]
+        : [];
+
+      const updatedFiles = [...files];
+
+      updatedFiles[fileIndex] = {
+        name: file.name,
+        data: reader.result,
+      };
+
+      const updated = {
+        ...(service.stepFiles || {}),
+        [stepIndex]: updatedFiles,
+      };
+
+      await update(ref(db, `services/${id}`), {
+        stepFiles: updated,
+      });
+
+      showToast("File replaced!");
+    };
+
+    reader.readAsDataURL(file);
+  };
+
   if (!service) {
     return (
       <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -226,6 +320,62 @@ export default function ServiceDetail() {
                     </div>
                 )}
 
+                {(Array.isArray(service.stepFiles?.[index])
+                    ? service.stepFiles[index]
+                    : service.stepFiles?.[index]
+                    ? [service.stepFiles[index]]
+                    : []
+                  ).map((file, fileIndex) => (
+                    <div
+                      key={fileIndex}
+                      className="flex items-center justify-between mt-2 bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-lg"
+                    >
+                      {/* FILE NAME */}
+                      <span className="text-sm truncate max-w-[50%]">
+                        {file.name}
+                      </span>
+
+                      {/* ACTIONS */}
+                      <div className="flex items-center gap-3">
+
+                        {/* DOWNLOAD */}
+                        <a
+                          href={file.data}
+                          download={file.name}
+                          className="flex items-center gap-1 text-black text-sm dark:text-white hover:text-white dark:hover:text-white-300 transition"
+                        >
+                          <Download size={16} />
+                        </a>
+
+                        {/* REPLACE */}
+                        {role === "admin" && (
+                          <label className="cursor-pointer text-black hover:text-yellow-700 transition dark:text-white dark:hover:text-yellow-500 flex items-center gap-1">
+                            <Pencil size={16} />
+                            <input
+                              type="file"
+                              className="hidden"
+                              onChange={(e) =>
+                                handleReplaceFile(e.target.files[0], index, fileIndex)
+                              }
+                            />
+                          </label>
+                        )}
+
+                        {/* DELETE */}
+                        {role === "admin" && (
+                          <button
+                            onClick={() => handleDeleteFile(index, fileIndex)}
+                            className="text-black hover:text-red-700 transition dark:text-white dark:hover:text-red-500 flex items-center gap-1"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+
+                      </div>
+                    </div>
+                  ))
+                }
+
                 {/* TEXT */}
                 {editingIndex === index ? (
                   <input
@@ -281,6 +431,18 @@ export default function ServiceDetail() {
                             }
                         />
                     </label>
+                    
+                    {/* FILE UPLOAD ICON ONLY */}
+                    <label className="text-indigo-600 hover:text-indigo-800 cursor-pointer">
+                      <FilePlus size={18} />
+                      <input
+                        type="file"
+                        className="hidden"
+                        onChange={(e) =>
+                          handleStepFile(e.target.files[0], index)
+                        }
+                      />
+                    </label>
 
                   </div>
                 )}
@@ -310,7 +472,7 @@ export default function ServiceDetail() {
                 <img
                 src={zoomImage}
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                onClick={(e) => e.stopPropagation()} // prevents closing when clicking image
+                onClick={(e) => e.stopPropagation()}
                 />
             </div>
             )}
