@@ -128,7 +128,7 @@ export default function Dashboard() {
   if (authLoading || dataLoading) {
     return (
       <div className="p-6 bg-gray-100 dark:bg-gray-900 min-h-screen">
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {[...Array(5)].map((_, i) => (
             <div
@@ -195,126 +195,155 @@ export default function Dashboard() {
       ) : (
 
         // ================= USER FEED =================
-        <div className="max-w-2xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-          {posts.map((post) => (
-            <div
-              key={post.id}
-              onClick={() =>
-                navigate(`/organizations/${post.orgId}/events/${post.id}`, {
-                  state: { from: "dashboard" },
-                })
-              }
-              className="bg-white dark:bg-gray-800 rounded-2xl shadow hover:shadow-xl transition cursor-pointer overflow-hidden"
-            >
+          {/* LEFT SPACER */}
+          <div className="hidden lg:block"></div>
 
-              {/* HEADER */}
-              <div className="flex items-center gap-3 p-4">  
-                {/* PROFILE IMAGE */}
-                <div
-                  className="w-11 h-11 rounded-full overflow-hidden bg-gray-200 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    navigate(`/organizations/${post.orgId}`)
-                  }}
-                >
-                  {post.orgImage ? (
-                    <img src={post.orgImage} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="flex items-center justify-center h-full">
-                      <ImageIcon className="w-5 h-5 text-gray-500" />
-                    </div>
+          {/* ================= FEED (CENTER + WIDER) ================= */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                onClick={() =>
+                  navigate(`/organizations/${post.orgId}/events/${post.id}`, {
+                    state: { from: "dashboard" },
+                  })
+                }
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow overflow-hidden"
+              >
+
+                {/* HEADER */}
+                <div className="flex items-center gap-3 p-4">
+
+                  {/* PROFILE */}
+                  <div
+                    className="w-11 h-11 rounded-full overflow-hidden bg-gray-200 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigate(`/organizations/${post.orgId}`)
+                    }}
+                  >
+                    {post.orgImage ? (
+                      <img src={post.orgImage} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <ImageIcon className="w-5 h-5 text-gray-500" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ORG */}
+                  <div
+                    className="flex-1 cursor-pointer"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      navigate(`/organizations/${post.orgId}`)
+                    }}
+                  >
+                    <p className="font-semibold text-gray-800 dark:text-white hover:underline">
+                      {post.orgName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(post.date)}
+                    </p>
+                  </div>
+
+                  {/* STATUS */}
+                  <span
+                    className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                      post.status === "ongoing"
+                        ? "bg-green-100 text-green-700"
+                        : post.status === "finished"
+                        ? "bg-gray-200 text-gray-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    {post.status === "ongoing"
+                      ? "Ongoing"
+                      : post.status === "finished"
+                      ? "Finished"
+                      : "Upcoming"}
+                  </span>
+                </div>
+
+                {/* CONTENT */}
+                <div className="px-4 pb-3">
+                  <h2 className="font-bold text-lg text-gray-900 dark:text-white">
+                    {post.title}
+                  </h2>
+
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
+                    {expandedPosts.has(post.id)
+                      ? post.description
+                      : post.description?.length > 120
+                      ? post.description.slice(0, 120) + "..."
+                      : post.description}
+                  </p>
+
+                  {post.description?.length > 120 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleExpand(post.id)
+                      }}
+                      className="text-blue-500 text-xs mt-1 hover:underline"
+                    >
+                      {expandedPosts.has(post.id) ? "See less" : "See more"}
+                    </button>
                   )}
                 </div>
 
-                {/* ORG NAME */}
-                <div
-                  className="flex-1 cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    navigate(`/organizations/${post.orgId}`)
-                  }}
-                >
-                  <p className="font-semibold text-gray-800 dark:text-white hover:underline">
-                    {post.orgName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(post.date)}
-                  </p>
-                </div>
-
-                {/* STATUS BADGE */}
-                <span
-                  className={`text-xs px-3 py-1 rounded-full font-semibold ${
-                    post.status === "ongoing"
-                      ? "bg-green-100 text-green-700"
-                      : post.status === "finished"
-                      ? "bg-gray-200 text-gray-700"
-                      : "bg-blue-100 text-blue-700"
-                  }`}
-                >
-                  {post.status === "ongoing"
-                    ? "Ongoing"
-                    : post.status === "finished"
-                    ? "Finished"
-                    : "Upcoming"}
-                </span>
-              </div>
-
-              {/* CONTENT */}
-              <div className="px-4 pb-3">
-                <h2 className="font-bold text-lg text-gray-900 dark:text-white">
-                  {post.title}
-                </h2>
-
-                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">
-                  {expandedPosts.has(post.id)
-                    ? post.description
-                    : post.description?.length > 120
-                      ? post.description.slice(0, 120) + "..."
-                      : post.description
-                  }
-                </p>
-
-                {post.description?.length > 120 && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleExpand(post.id)
-                    }}
-                    className="text-blue-500 text-xs mt-1 hover:underline"
-                  >
-                    {expandedPosts.has(post.id) ? "See less" : "See more"}
-                  </button>
+                {/* IMAGE */}
+                {post.image && (
+                  <div className="w-full">
+                    <img
+                      src={post.image}
+                      alt="event"
+                      className="w-full max-h-[480px] object-cover"
+                    />
+                  </div>
                 )}
-              </div>
 
-              {/* IMAGE */}
-              {post.image && (
-                <div className="w-full">
-                  <img
-                    src={post.image}
-                    alt="event"
-                    className="w-full max-h-[420px] object-cover"
-                  />/
+                {/* ACTIONS */}
+                <div className="flex justify-around text-gray-500 text-sm border-t p-3">
+                  <button className="hover:text-blue-500">Like</button>
+                  <button className="hover:text-blue-500">Comment</button>
+                  <button className="hover:text-blue-500">Share</button>
                 </div>
-              )}
 
-              {/* ACTIONS */}
-              <div className="flex justify-around text-gray-500 text-sm border-t p-3">
-                <button className="hover:text-blue-500">Like</button>
-                <button className="hover:text-blue-500">Comment</button>
-                <button className="hover:text-blue-500">Share</button>
+              </div>
+            ))}
+          </div>
+
+          {/* ================= RIGHT SIDEBAR ================= */}
+          <div className="hidden lg:block space-y-4">
+
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
+              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
+                📢 Announcements
+              </h2>
+            </div>
+
+            <div className="space-y-3">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
+                <p className="font-semibold text-blue-600">System Update</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  Maintenance tonight at 11PM.
+                </p>
               </div>
 
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
+                <p className="font-semibold text-green-600">New Feature</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  Image upload is now available.
+                </p>
+              </div>
             </div>
-          ))}
 
-          {posts.length === 0 && (
-            <p className="text-center text-gray-500">
-              No posts available.
-            </p>
-          )}
+          </div>
+
         </div>
       )}
     </div>

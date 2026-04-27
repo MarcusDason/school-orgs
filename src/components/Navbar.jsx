@@ -8,6 +8,7 @@ import {
   Sun,
   Building2,
   LogOut,
+  Briefcase,
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -19,7 +20,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
   const [maxHeight, setMaxHeight] = useState("0px");
 
   const navigate = useNavigate();
-  const location = useLocation(); // get current path
+  const location = useLocation();
 
   useEffect(() => {
     if (menuRef.current) {
@@ -36,15 +37,14 @@ export default function Navbar({ darkMode, setDarkMode }) {
     }
   };
 
-  // Determine button label and action based on current route
   let authButtonLabel = "Logout";
   let authButtonAction = handleLogout;
 
   if (location.pathname === "/login") {
-    authButtonLabel = "Sign Up"; // ✅ on login page, show Sign Up
+    authButtonLabel = "Sign Up";
     authButtonAction = () => navigate("/signup");
   } else if (location.pathname === "/signup") {
-    authButtonLabel = "Login"; // ✅ on signup page, show Login
+    authButtonLabel = "Login";
     authButtonAction = () => navigate("/login");
   }
 
@@ -78,15 +78,25 @@ export default function Navbar({ darkMode, setDarkMode }) {
           Organizations
         </NavLink>
 
+        {/* ✅ Services */}
+        <NavLink to="/services" className={linkClass}>
+          <Briefcase size={20} />
+          Services
+        </NavLink>
+
         {/* Dark Mode */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
+          {darkMode ? (
+            <Sun size={20} className="text-yellow-400" />
+          ) : (
+            <Moon size={20} />
+          )}
         </button>
 
-        {/* Auth Button */}
+        {/* Auth */}
         <button
           onClick={authButtonAction}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
@@ -106,11 +116,19 @@ export default function Navbar({ darkMode, setDarkMode }) {
           onClick={() => setDarkMode(!darkMode)}
           className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
         >
-          {darkMode ? <Sun size={20} className="text-yellow-400" /> : <Moon size={20} />}
+          {darkMode ? (
+            <Sun size={20} className="text-yellow-400" />
+          ) : (
+            <Moon size={20} />
+          )}
         </button>
 
         <button onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={24} className="text-black dark:text-white" /> : <Menu size={24} className="text-black dark:text-white" />}
+          {isOpen ? (
+            <X size={24} className="text-black dark:text-white" />
+          ) : (
+            <Menu size={24} className="text-black dark:text-white" />
+          )}
         </button>
       </div>
 
@@ -134,10 +152,20 @@ export default function Navbar({ darkMode, setDarkMode }) {
           Organizations
         </NavLink>
 
+        {/* ✅ Services Mobile */}
+        <NavLink
+          to="/services"
+          className={linkClass}
+          onClick={() => setIsOpen(false)}
+        >
+          <Briefcase size={20} />
+          Services
+        </NavLink>
+
         {/* Auth Mobile */}
         <button
           onClick={authButtonAction}
-          className={`w-full flex items-center gap-2 py-2 px-4 rounded ${
+          className={`w-full flex items-center gap-2 py-2 px-4 ${
             authButtonLabel === "Logout"
               ? "text-red-500 hover:bg-gray-100 dark:hover:bg-gray-700"
               : "text-blue-600 hover:bg-gray-100 dark:hover:bg-gray-700"

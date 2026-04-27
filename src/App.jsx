@@ -10,6 +10,8 @@ import AddEventPage from "./pages/AddEventPage";
 import AddOrganization from "./pages/AddOrganization";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Services from "./pages/Services"; // ✅ Services list page
+import ServiceDetail from "./pages/ServiceDetail"; // ✅ Service detail page
 
 // Components
 import Navbar from "./components/Navbar";
@@ -34,15 +36,16 @@ function App() {
     <BrowserRouter>
       <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
         
-        {/* Navbar always visible */}
+        {/* Navbar */}
         <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
 
         <Routes>
-          {/* ✅ PUBLIC ROUTES */}
+          {/* ================= PUBLIC ROUTES ================= */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
 
-          {/* ✅ PROTECTED ROUTES */}
+          {/* ================= PROTECTED ROUTES ================= */}
+
           <Route
             path="/"
             element={
@@ -93,6 +96,26 @@ function App() {
             element={
               <ProtectedRoute>
                 <AddOrganization />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ================= SERVICES ================= */}
+
+          <Route
+            path="/services"
+            element={
+              <ProtectedRoute>
+                <Services />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/services/:id"
+            element={
+              <ProtectedRoute>
+                <ServiceDetail />
               </ProtectedRoute>
             }
           />
