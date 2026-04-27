@@ -38,7 +38,6 @@ export default function Organizations() {
   useEffect(() => {
     const orgRef = ref(db, "organizations");
 
-    // ✅ Load cached (lightweight only)
     try {
       const cached = localStorage.getItem("orgs");
       if (cached) {
@@ -64,14 +63,13 @@ export default function Organizations() {
 
           setOrgs(data);
 
-          // ✅ SAVE LIGHTWEIGHT VERSION ONLY
           try {
             const lightweightData = data.map((org) => ({
               id: org.id,
               name: org.name,
               members: org.members || 0,
               yearFounded: org.yearFounded || "Unknown",
-              image: org.image || "", // ⚠️ must be URL, not base64
+              image: org.image || "",
             }));
 
             localStorage.setItem(
@@ -96,7 +94,6 @@ export default function Organizations() {
 
   }, []);
 
-  // ✅ Delete
   const handleDeleteOrg = (deletedOrgId) => {
     setOrgs((prev) =>
       prev.filter((org) => org.id !== deletedOrgId)
@@ -105,7 +102,6 @@ export default function Organizations() {
     setTimeout(() => setSuccessMsg(""), 1000);
   };
 
-  // ✅ Update
   const handleUpdateOrg = async (updatedOrg) => {
     setUpdateLoading(true);
 
@@ -127,7 +123,6 @@ export default function Organizations() {
     }
   };
 
-  // ✅ Categories
   const categories = [
     "All",
     ...Array.from(
@@ -135,7 +130,6 @@ export default function Organizations() {
     ),
   ];
 
-  // ✅ Filter
   const filteredOrgs =
     selectedCategory === "All"
       ? orgs
@@ -143,7 +137,6 @@ export default function Organizations() {
 
   return (
     <div className="bg-gray-100 dark:bg-gray-900 min-h-screen p-6">
-      {/* ✅ Success Modal */}
       {successMsg && (
         <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
           <div className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-xl p-8 text-center font-semibold text-xl shadow-lg flex items-center gap-3">
@@ -194,7 +187,6 @@ export default function Organizations() {
 
       {/* Content */}
       {loading ? (
-        // ✅ Skeleton Loader
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {[...Array(6)].map((_, i) => (
             <div

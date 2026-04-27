@@ -32,12 +32,9 @@ export default function OrganizationDetail() {
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [permissions, setPermissions] = useState({});
 
-  // ✅ Persist active page in localStorage
   const [activeTabPage, setActiveTabPage] = useState(() => {
     return localStorage.getItem(`org-${id}-tab`) || "events";
   });
-
-  // Update localStorage whenever activeTabPage changes
   useEffect(() => {
     localStorage.setItem(`org-${id}-tab`, activeTabPage);
   }, [activeTabPage, id]);
@@ -100,7 +97,7 @@ export default function OrganizationDetail() {
       } else {
         setMembers([]);
       }
-      setLoadingMembers(false); // ✅ mark members as loaded
+      setLoadingMembers(false);
     });
 
     return () => off(membersRef);
@@ -129,14 +126,12 @@ export default function OrganizationDetail() {
       setIsMember(true);
       setUserRole(member.position || "Member");
     } else {
-      // Not a member, check if admin
-      // fetch the user from the database
       get(ref(db, `users/${currentUser.uid}`))
         .then(snapshot => {
           if (snapshot.exists()) {
             const userData = snapshot.val();
             if (userData.role === "admin") {
-              setIsMember(true);       // admins can edit even if not a member
+              setIsMember(true); 
               setUserRole("Admin");
             } else {
               setIsMember(false);
@@ -217,7 +212,6 @@ export default function OrganizationDetail() {
   };
 
   const handlePromoteMember = async (member) => {
-    // remove current president
     const currentPresident = members.find(
       (m) => m.position?.toLowerCase() === "president"
     );
@@ -228,7 +222,6 @@ export default function OrganizationDetail() {
       });
     }
 
-    // promote selected member
     await update(ref(db, `members/${member.id}`), {
       position: "President",
     });
@@ -242,14 +235,12 @@ export default function OrganizationDetail() {
       orgId: id,
     });
 
-    // ✅ OPTIONAL: update member count in org
     await update(ref(db, `organizations/${id}`), {
       members: members.length + 1,
     });
   };
 
   const handleEditMember = async (member) => {
-  // 🔥 You MUST have member.id or member.key
     const memberRef = ref(db, `members/${member.id}`);
 
     await update(memberRef, {

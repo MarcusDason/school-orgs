@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../firebase/config"; // ✅ ADD db
-import { ref, set } from "firebase/database";   // ✅ ADD
+import { auth, db } from "../firebase/config";
+import { ref, set } from "firebase/database";
 
 export default function Signup() {
   const [email, setEmail] = useState("");
@@ -28,7 +28,6 @@ export default function Signup() {
     setError("");
 
     try {
-      // ✅ 1. Create user in Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -37,10 +36,9 @@ export default function Signup() {
 
       const user = userCredential.user;
 
-      // ✅ 2. Save user in Realtime Database WITH ROLE
       await set(ref(db, `users/${user.uid}`), {
         email: user.email,
-        role: "user", // 🔥 DEFAULT ROLE
+        role: "user",
         createdAt: new Date().toISOString(),
       });
 

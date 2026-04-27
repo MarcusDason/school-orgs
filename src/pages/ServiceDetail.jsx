@@ -106,11 +106,9 @@ export default function ServiceDetail() {
   const handleDeleteStep = async (index) => {
     const updatedSteps = service.steps.filter((_, i) => i !== index);
 
-    // remove image for that step
     const updatedImages = { ...(stepImages || {}) };
     delete updatedImages[index];
 
-    // shift images down so indexes stay aligned
     const reindexedImages = {};
     Object.keys(updatedImages).forEach((key) => {
         const numKey = parseInt(key);
@@ -180,7 +178,6 @@ export default function ServiceDetail() {
   const handleDeleteFile = async (stepIndex, fileIndex) => {
     const rawFiles = service.stepFiles?.[stepIndex];
 
-    // ✅ normalize to array
     const files = Array.isArray(rawFiles)
       ? rawFiles
       : rawFiles
@@ -207,7 +204,6 @@ export default function ServiceDetail() {
     reader.onloadend = async () => {
       const raw = service.stepFiles?.[stepIndex];
 
-      // ✅ normalize
       const files = Array.isArray(raw)
         ? raw
         : raw

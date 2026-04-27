@@ -29,14 +29,12 @@ export default function AddOrganization() {
     if (!file || !file.type.startsWith("image/")) return;
 
     try {
-        // 🔥 STEP 1: COMPRESS FIRST (BIG PERFORMANCE BOOST)
         const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.2,          // ⬅️ very important (200kb max)
-        maxWidthOrHeight: 300,   // ⬅️ resize image
+        maxSizeMB: 0.2,
+        maxWidthOrHeight: 300,
         useWebWorker: true,
         });
 
-        // 🔥 STEP 2: OPTIONAL FACE DETECTION (ONLY FOR MEMBERS)
         if (detectPerson) {
         const img = document.createElement("img");
         img.src = URL.createObjectURL(compressedFile);
@@ -52,7 +50,6 @@ export default function AddOrganization() {
         }
         }
 
-        // 🔥 STEP 3: CONVERT TO BASE64 (SMALL NOW)
         const reader = new FileReader();
         reader.onloadend = () => {
         setFile(compressedFile);
@@ -124,9 +121,8 @@ export default function AddOrganization() {
 
         const orgId = newOrgRef.key;
 
-        let memberCount = 0; // ✅ counter
+        let memberCount = 0;
 
-        // ✅ save members FIRST
         const membersRef = ref(db, "members");
 
         for (let m of members) {
@@ -146,17 +142,16 @@ export default function AddOrganization() {
         name,
         description,
         image: logoPreview,
-        members: memberCount, // ✅ correct total
+        members: memberCount,
         dateAdded: new Date().toISOString(),
         });
 
         setShowSuccess(true);
 
-        // ⏳ auto close + redirect
         setTimeout(() => {
         setShowSuccess(false);
         navigate("/organizations");
-        }, 2000); // 2 seconds
+        }, 2000);
 
     } catch (err) {
         console.error("Error saving organization:", err);

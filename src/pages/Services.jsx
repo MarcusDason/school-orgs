@@ -20,9 +20,6 @@ export default function Services() {
   const [services, setServices] = useState([]);
   const [role, setRole] = useState("user");
 
-  // =========================
-  // GET USER ROLE
-  // =========================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -57,9 +54,6 @@ export default function Services() {
     return () => unsubscribe();
   }, []);
 
-  // =========================
-  // ADD SERVICE (ADMIN ONLY)
-  // =========================
   const handleAddService = async () => {
     const name = prompt("Service title:");
     if (!name) return;
@@ -76,9 +70,6 @@ export default function Services() {
     });
   };
 
-  // =========================
-  // DELETE SERVICE (ADMIN ONLY)
-  // =========================
   const deleteService = async (e, id) => {
     e.stopPropagation();
 

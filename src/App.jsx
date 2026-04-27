@@ -10,8 +10,8 @@ import AddEventPage from "./pages/AddEventPage";
 import AddOrganization from "./pages/AddOrganization";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Services from "./pages/Services"; // ✅ Services list page
-import ServiceDetail from "./pages/ServiceDetail"; // ✅ Service detail page
+import Services from "./pages/Services";
+import ServiceDetail from "./pages/ServiceDetail";
 
 // Components
 import Navbar from "./components/Navbar";

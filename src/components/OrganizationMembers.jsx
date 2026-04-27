@@ -31,7 +31,6 @@ export default function OrganizationMembers({
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
 
-  // 🎯 ROLE PRIORITY ORDER
   const rolePriority = {
     "president": 1,
     "vice president": 2,
@@ -40,7 +39,6 @@ export default function OrganizationMembers({
     "member": 5,
   };
 
-  // ✅ GET USER ROLE
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -58,7 +56,6 @@ export default function OrganizationMembers({
     return () => unsubscribe();
   }, []);
 
-  // ✅ GET ORG MEMBERS
   useEffect(() => {
     if (!org?.id) return;
 
@@ -77,14 +74,12 @@ export default function OrganizationMembers({
   role === "admin" ||
   orgMembers.some((m) => m.uid === auth.currentUser?.uid);
 
-  // ✅ SORT MEMBERS BASED ON ROLE
     const sortedMembers = [...members].sort((a, b) => {
     const roleA = rolePriority[a.position?.toLowerCase()] || 999;
     const roleB = rolePriority[b.position?.toLowerCase()] || 999;
 
     if (roleA !== roleB) return roleA - roleB;
 
-    // 🔤 same role → sort by name
     return (a.fullName || "").localeCompare(b.fullName || "");
   });
 
@@ -117,7 +112,6 @@ export default function OrganizationMembers({
       );
       if (!confirmChange) return;
 
-      // Demote existing president
       await onEditMember?.({
         ...existingPresident,
         position: "Member",
@@ -125,20 +119,17 @@ export default function OrganizationMembers({
     }
 
     if (isEditMode && editingMember) {
-      // EDIT
       await onEditMember?.({
         ...editingMember,
         ...memberData,
       });
     } else {
-      // ADD
       await onAddMember?.({
         ...memberData,
         number: Date.now(),
       });
     }
 
-    // Close modal
     setIsModalOpen(false);
     setEditingMember(null);
     setIsEditMode(false);
@@ -295,11 +286,11 @@ export default function OrganizationMembers({
             ...selectedUser,
             orgId: org.id,
             position: "Member",
-            number: Date.now(), // optional unique id
+            number: Date.now(),
           });
           setIsModalOpen(false);
         }}
-        members={orgMembers} // pass current members to exclude from search
+        members={orgMembers}
       />
     </div>
   );

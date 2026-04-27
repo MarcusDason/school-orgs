@@ -10,11 +10,9 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
-  // ✅ Use precomputed members (NO heavy Object.keys)
   const memberCount = org.members || 0;
   const memberText = `${memberCount} Member${memberCount === 1 ? "" : "s"}`;
 
-  // ✅ Memoized description (prevents re-calculation)
   const shortDescription = useMemo(() => {
     if (!org.description) return "";
     const words = org.description.split(" ");
@@ -23,7 +21,6 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
       : words.slice(0, 20).join(" ") + "...";
   }, [org.description]);
 
-  // ✅ Icons (static)
   const icons = [
     {
       bg: "bg-blue-100 dark:bg-blue-900",
@@ -79,12 +76,10 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
 
   const icon = icons[iconIndex];
 
-  // ✅ Delete
   const confirmDelete = async () => {
     try {
       const orgId = org.id;
 
-      // 🔹 1. DELETE MEMBERS
       const membersRef = ref(db, "members");
       const membersSnap = await get(membersRef);
 
@@ -100,7 +95,6 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
         await Promise.all(deleteMemberPromises);
       }
 
-      // 🔹 2. DELETE EVENTS
       const eventsRef = ref(db, "events");
       const eventsSnap = await get(eventsRef);
 
@@ -116,7 +110,6 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
         await Promise.all(deleteEventPromises);
       }
 
-      // 🔹 3. DELETE ORGANIZATION
       await remove(ref(db, `organizations/${orgId}`));
 
       if (onDelete) onDelete(orgId);
@@ -127,7 +120,6 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
     }
   };
 
-  // ✅ Edit
   const handleEdit = (updatedOrg) => {
     const orgRef = ref(db, `organizations/${org.id}`);
     update(orgRef, updatedOrg)
@@ -146,7 +138,7 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
       <div
         onClick={() =>
           navigate(`/organizations/${org.id}`, {
-            state: { org }, // ✅ instant navigation (no refetch feel)
+            state: { org },
           })
         }
         className="group cursor-pointer bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg rounded-2xl p-6 hover:scale-105 transition transform relative flex flex-col justify-between h-64"
@@ -275,5 +267,4 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
   );
 }
 
-// ✅ Prevent unnecessary re-renders
 export default memo(OrgCard);

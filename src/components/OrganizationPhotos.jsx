@@ -10,8 +10,6 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // 🔐 NEW STATES
   const [role, setRole] = useState("user");
   const [orgMembers, setOrgMembers] = useState([]);
 
@@ -84,7 +82,6 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
   };
 
   const handleUpload = async () => {
-    // 🔒 PROTECTION
     if (!userCanManage) {
       alert("You are not allowed to upload photos.");
       return;

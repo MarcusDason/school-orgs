@@ -77,7 +77,6 @@ useEffect(() => {
   fetchMembershipAndRole();
 }, [currentUser, organization]);
 
-// Determine if user can edit
   const canEdit = isMember || userRole === "admin";
 
  useEffect(() => {
@@ -93,7 +92,6 @@ useEffect(() => {
       const eventData = eventSnap.val();
       setEvent({ id: eventId, ...eventData });
 
-      // fetch organization using orgId inside event
       if (eventData.orgId) {
         const orgSnap = await get(ref(db, `organizations/${eventData.orgId}`));
         if (orgSnap.exists()) {
@@ -186,7 +184,6 @@ useEffect(() => {
 
       alert("Event deleted successfully!");
 
-      // redirect using event.orgId (fallback to param)
       const redirectOrgId = event?.orgId || orgId;
       window.location.href = `/organizations/${redirectOrgId}`;
 
