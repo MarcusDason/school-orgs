@@ -12,6 +12,9 @@ import StatCard from "../components/StatCard"
 import DashboardCharts from "../components/DashboardCharts"
 import { Users, Building2, CalendarCheck, BarChart3 } from "lucide-react"
 
+// COmponents
+import Announcements from "../components/Announcements"
+
 export default function Dashboard() {
   const navigate = useNavigate()
 
@@ -318,30 +321,8 @@ export default function Dashboard() {
           </div>
 
           {/* ================= RIGHT SIDEBAR ================= */}
-          <div className="hidden lg:block space-y-4">
-
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
-              <h2 className="text-lg font-bold text-gray-800 dark:text-white">
-                📢 Announcements
-              </h2>
-            </div>
-
-            <div className="space-y-3">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
-                <p className="font-semibold text-blue-600">System Update</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                  Maintenance tonight at 11PM.
-                </p>
-              </div>
-
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
-                <p className="font-semibold text-green-600">New Feature</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                  Image upload is now available.
-                </p>
-              </div>
-            </div>
-
+          <div className="hidden lg:block">
+            <Announcements />
           </div>
 
         </div>
