@@ -165,24 +165,27 @@ export default function Dashboard() {
       ) : (
 
         // ================= USER FEED =================
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="max-w-full mx-auto px-4 lg:px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* LEFT SPACER */}
-          <div className="hidden lg:block"></div>
+            {/* ================= FEED (WIDER) ================= */}
+            <div className="lg:col-span-8 xl:col-span-9">
+              <Feed
+                posts={posts}
+                expandedPosts={expandedPosts}
+                toggleExpand={toggleExpand}
+                formatDate={formatDate}
+              />
+            </div>
 
-          {/* ================= FEED (CENTER + WIDER) ================= */}
-          <Feed
-            posts={posts}
-            expandedPosts={expandedPosts}
-            toggleExpand={toggleExpand}
-            formatDate={formatDate}
-          />
+            {/* ================= RIGHT SIDEBAR (BIGGER) ================= */}
+            <div className="lg:col-span-4 xl:col-span-3">
+              <div className="sticky top-20">
+                <Announcements role={role} />
+              </div>
+            </div>
 
-          {/* ================= RIGHT SIDEBAR ================= */}
-          <div className="hidden lg:block">
-            <Announcements role={role} />
           </div>
-
         </div>
       )}
     </div>

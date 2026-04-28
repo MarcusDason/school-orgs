@@ -1,16 +1,119 @@
-import { useState } from "react"
-import { db } from "../firebase/config"
-import { ref, push, set, serverTimestamp } from "firebase/database"
+import { useState, useEffect } from "react"
+import { db, auth } from "../firebase/config"
+import {
+  ref,
+  push,
+  set,
+  onValue,
+  get,
+  serverTimestamp,
+} from "firebase/database"
+import { onAuthStateChanged } from "firebase/auth"
 
 export default function Announcements({ role = "user" }) {
-  const isAdmin = role?.toLowerCase() === "admin"
-
-  const [title, setTitle] = useState("")
+  const [announcements, setAnnouncements] = useState([])
   const [message, setMessage] = useState("")
+  const [selectedOrgs, setSelectedOrgs] = useState([])
+  const [userOrgs, setUserOrgs] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const handleAddAnnouncement = async () => {
-    if (!title.trim() || !message.trim()) return
+  const [currentUser, setCurrentUser] = useState(null)
+  const [isMember, setIsMember] = useState(false)
+
+  const isAdmin = role?.toLowerCase() === "admin"
+  const canPost = isMember || isAdmin
+
+  // ================= AUTH =================
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user || null)
+    })
+    return () => unsub()
+  }, [])
+
+  // ================= GET USER ORGS =================
+  useEffect(() => {
+    if (!currentUser) return
+
+    const loadUserOrgs = async () => {
+      try {
+        const [orgSnap, membersSnap] = await Promise.all([
+          get(ref(db, "organizations")),
+          get(ref(db, "members")),
+        ])
+
+        if (!orgSnap.exists() || !membersSnap.exists()) return
+
+        const orgs = orgSnap.val()
+        const members = Object.values(membersSnap.val())
+
+        const myOrgIds = members
+          .filter((m) => m.uid === currentUser.uid)
+          .map((m) => m.orgId)
+
+        const filtered = Object.entries(orgs)
+          .filter(([id]) => myOrgIds.includes(id))
+          .map(([id, org]) => ({
+            id,
+            ...org,
+          }))
+
+        setUserOrgs(filtered)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    loadUserOrgs()
+  }, [currentUser])
+
+  // ================= CHECK MEMBERSHIP =================
+  useEffect(() => {
+    if (!currentUser) return
+
+    const check = async () => {
+      const snap = await get(ref(db, "members"))
+      if (!snap.exists()) return
+
+      const members = Object.values(snap.val())
+      setIsMember(members.some((m) => m.uid === currentUser.uid))
+    }
+
+    check()
+  }, [currentUser])
+
+  // ================= ANNOUNCEMENTS =================
+  useEffect(() => {
+    const refAnn = ref(db, "announcements")
+
+    const unsub = onValue(refAnn, (snap) => {
+      const data = snap.val() || {}
+
+      const list = Object.entries(data).map(([id, item]) => ({
+        id,
+        ...item,
+      }))
+
+      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+      setAnnouncements(list)
+    })
+
+    return () => unsub()
+  }, [])
+
+  // ================= TOGGLE ORGS =================
+  const toggleOrg = (id) => {
+    setSelectedOrgs((prev) =>
+      prev.includes(id)
+        ? prev.filter((x) => x !== id)
+        : [...prev, id]
+    )
+  }
+
+  // ================= POST =================
+  const handlePost = async () => {
+    if (!message.trim() || selectedOrgs.length === 0) return
+    if (!canPost) return
 
     setLoading(true)
 
@@ -18,82 +121,162 @@ export default function Announcements({ role = "user" }) {
       const newRef = push(ref(db, "announcements"))
 
       await set(newRef, {
-        title,
         message,
-        createdAt: Date.now(),
+        orgIds: selectedOrgs,
+        createdAt: serverTimestamp(),
+        userId: currentUser?.uid || null,
       })
 
-      setTitle("")
       setMessage("")
+      setSelectedOrgs([])
     } catch (err) {
-      console.error("Failed to add announcement:", err)
+      console.error(err)
     } finally {
       setLoading(false)
     }
   }
 
+  // ================= FORMAT =================
+  const formatDate = (ts) => {
+    if (!ts) return ""
+    return new Date(ts).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    })
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-[calc(100vh-6rem)]">
 
       {/* HEADER */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
+      <div className="p-4 border-b dark:border-gray-700">
         <h2 className="text-lg font-bold text-gray-800 dark:text-white">
           📢 Announcements
         </h2>
       </div>
 
-      {/* SAMPLE ITEMS (replace later with Firebase list) */}
-      <div className="space-y-3">
+      {/* LIST */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {announcements.map((item) => (
+          <div
+            key={item.id}
+            className="border border-gray-200 dark:border-gray-700 rounded-xl p-3"
+          >
+            <p className="text-sm text-gray-800 dark:text-gray-200">
+              {item.message}
+            </p>
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
-          <p className="font-semibold text-blue-600">System Update</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-            Maintenance tonight at 11PM.
-          </p>
-        </div>
+            {item.orgIds?.length > 0 && (
+              <p className="text-xs text-blue-500 mt-1">
+                Sent to {item.orgIds.length} organization(s)
+              </p>
+            )}
 
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4">
-          <p className="font-semibold text-green-600">New Feature</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-            Image upload is now available.
-          </p>
-        </div>
-
+            <p className="text-xs text-gray-400 mt-2">
+              {formatDate(item.createdAt)}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {/* ================= ADMIN ADD FORM ================= */}
-      {isAdmin && (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4 space-y-3">
+      {/* DIVIDER */}
+      {canPost && (
+        <div className="border-t border-gray-200 dark:border-gray-700"></div>
+      )}
 
-          <h3 className="font-semibold text-gray-800 dark:text-white">
-            Add Announcement
-          </h3>
+      {/* POST SECTION */}
+      {canPost && (
+        <div className="p-4 space-y-3">
 
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
-            className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
-          />
+          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Organization
+          </div>
 
+          {/* ================= SELECTED CHIPS ================= */}
+          {selectedOrgs.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {selectedOrgs.map((id) => {
+                const org = userOrgs.find((o) => o.id === id)
+                if (!org) return null
+
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600 text-white text-xs"
+                  >
+                    <span>{org.name}</span>
+
+                    <button
+                      onClick={() =>
+                        setSelectedOrgs((prev) =>
+                          prev.filter((x) => x !== id)
+                        )
+                      }
+                      className="hover:text-gray-200"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* ================= ORG LIST ================= */}
+          <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+
+            {userOrgs.map((org) => {
+              const selected = selectedOrgs.includes(org.id)
+
+              return (
+                <button
+                  key={org.id}
+                  onClick={() => toggleOrg(org.id)}
+                  className={`w-full flex items-center gap-3 p-2 rounded-lg border transition
+                    ${
+                      selected
+                        ? "border-blue-500 bg-blue-50 dark:bg-gray-800"
+                        : "border-gray-200 dark:border-gray-700"
+                    }`}
+                >
+                  {org.image ? (
+                    <img
+                      src={org.image}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-300" />
+                  )}
+
+                  <span className="text-sm font-medium text-gray-800 dark:text-white">
+                    {org.name}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+
+          {/* TEXTAREA */}
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Message"
+            placeholder="Write an announcement..."
             className="w-full px-3 py-2 rounded border dark:bg-gray-700 dark:border-gray-600"
           />
 
+          {/* POST BUTTON */}
           <button
-            onClick={handleAddAnnouncement}
+            onClick={handlePost}
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Posting..." : "Post Announcement"}
           </button>
 
         </div>
       )}
-
     </div>
   )
 }
