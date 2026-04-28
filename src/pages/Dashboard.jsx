@@ -16,6 +16,7 @@ import { Users, Building2, CalendarCheck, BarChart3 } from "lucide-react"
 import Announcements from "../components/Announcements"
 import Feed from "../components/Feed"
 import FeedSkeleton from "../components/FeedSkeleton"
+import AdminSkeleton from "../components/AdminSkeleton"
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -130,8 +131,14 @@ export default function Dashboard() {
     })
   }
 
-  if (authLoading || dataLoading) {
+  if (authLoading) {
+    // Don't know role yet → show neutral skeleton (or nothing)
     return <FeedSkeleton />
+  }
+
+  if (dataLoading) {
+    const isAdmin = role?.toLowerCase() === "admin"
+    return isAdmin ? <AdminSkeleton /> : <FeedSkeleton />
   }
 
   const isAdmin = role?.toLowerCase() === "admin"
