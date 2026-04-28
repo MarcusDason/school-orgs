@@ -1,9 +1,17 @@
-import { ImageIcon } from "lucide-react"
+import { Heart, CheckCircle , ImageIcon, Forward} from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import { useState } from "react"
 
 export default function Feed({ posts, expandedPosts, toggleExpand, formatDate }) {
   const navigate = useNavigate()
+  const [responses, setResponses] = useState({})
 
+  const handleResponse = (postId, type) => {
+    setResponses((prev) => ({
+      ...prev,
+      [postId]: prev[postId] === type ? null : type, // toggle
+    }))
+  }
   return (
     <div className="lg:col-span-2 space-y-6">
 
@@ -112,9 +120,58 @@ export default function Feed({ posts, expandedPosts, toggleExpand, formatDate })
 
           {/* ACTIONS */}
           <div className="flex justify-around text-gray-500 text-sm border-t p-3">
-            <button className="hover:text-blue-500">Like</button>
-            <button className="hover:text-blue-500">Comment</button>
-            <button className="hover:text-blue-500">Share</button>
+            {/* Interested */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleResponse(post.id, "interested")
+              }}
+              className={`flex items-center gap-2 transition ${
+                responses[post.id] === "interested"
+                  ? "text-blue-500"
+                  : "hover:text-blue-500"
+              }`}
+            >
+              <Heart
+                className={`w-4 h-4 ${
+                  responses[post.id] === "interested" ? "fill-blue-500" : ""
+                }`}
+              />
+              Interested
+            </button>
+
+            {/* Going */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                handleResponse(post.id, "going")
+              }}
+              className={`flex items-center gap-2 transition ${
+                responses[post.id] === "going"
+                  ? "text-green-500"
+                  : "hover:text-green-500"
+              }`}
+            >
+              <CheckCircle
+                className={`w-4 h-4 ${
+                  responses[post.id] === "going" ? "fill-green-500" : ""
+                }`}
+              />
+              Going
+            </button>
+
+            {/* Share */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                alert("Share coming soon 🚀")
+              }}
+              className="flex items-center gap-2 hover:text-blue-500 transition"
+            >
+              <Forward className="w-4 h-4" />
+              Share
+            </button>
+
           </div>
 
         </div>

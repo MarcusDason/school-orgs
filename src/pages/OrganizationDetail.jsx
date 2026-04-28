@@ -4,7 +4,7 @@ import { db } from "../firebase/config";
 import { ref, get, update, onValue, off, remove, push, set } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../firebase/config";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, CalendarRange, Info, Users, Camera, Settings } from "lucide-react";
 
 
 import { Edit } from "lucide-react";
@@ -298,75 +298,54 @@ export default function OrganizationDetail() {
         ← Back to Organizations
       </Link>
 
-      {/* Tabs for About / Events */}
-      <div className="flex gap-4 mb-4">
-        <button
-          onClick={() => setActiveTabPage("events")}
-          className={`px-4 py-2 rounded-full transition ${
-            activeTabPage === "events"
-              ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          }`}
-        >
-          Events
-        </button>
-        <button
-          onClick={() => setActiveTabPage("about")}
-          className={`px-4 py-2 rounded-full transition ${
-            activeTabPage === "about"
-              ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          }`}
-        >
-          About
-        </button>
-        <button
-          onClick={() => setActiveTabPage("members")}
-          className={`px-4 py-2 rounded-full transition ${
-            activeTabPage === "members"
-              ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          }`}
-        >
-          Members
-        </button>
+      <div className="flex flex-col lg:flex-row gap-6 mt-10">
 
-        <button
-          onClick={() => setActiveTabPage("photos")}
-          className={`px-4 py-2 rounded-full transition ${
-            activeTabPage === "photos"
-              ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          }`}
-        >
-          Photos
-        </button>
+        {/* ================= LEFT SIDEBAR ================= */}
+        <div className="lg:w-1/5">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex flex-col gap-2">
 
-        <button
-          onClick={() => setActiveTabPage("settings")}
-          className={`px-4 py-2 rounded-full transition ${
-            activeTabPage === "settings"
-              ? "bg-blue-600 text-white"
-              : "bg-white dark:bg-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-          }`}
-        >
-          Settings
-        </button>
-      </div>
+            {[
+              { key: "events", label: "Events", icon: CalendarRange },
+              { key: "about", label: "About", icon: Info },
+              { key: "members", label: "Members", icon: Users },
+              { key: "photos", label: "Photos", icon: Camera },
+              { key: "settings", label: "Settings", icon: Settings },
+            ].map((tab) => {
+              const Icon = tab.icon;
 
-      {/* Render About or Events */}
-      {activeTabPage === "settings" ? (
-          <OrganizationSettings 
-            org={org} 
-            onSave={handleSaveOrg} 
-            permissions={permissions}
-            orgId={id}
-          />
-         ) : 
-        activeTabPage === "about" ? (
-          <OrganizationAbout org={org} members={members} onSave={handleSaveOrg}/>
-        ) : activeTabPage === "members" ? (
-          <OrganizationMembers
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTabPage(tab.key)}
+                  className={`text-left px-4 py-2 rounded-lg font-medium flex items-center gap-3 transition ${
+                    activeTabPage === tab.key
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
+
+          </div>
+        </div>
+
+        {/* ================= MAIN CONTENT ================= */}
+        <div className="flex-1">
+
+          {activeTabPage === "settings" ? (
+            <OrganizationSettings 
+              org={org} 
+              onSave={handleSaveOrg} 
+              permissions={permissions}
+              orgId={id}
+            />
+          ) : activeTabPage === "about" ? (
+            <OrganizationAbout org={org} members={members} onSave={handleSaveOrg}/>
+          ) : activeTabPage === "members" ? (
+            <OrganizationMembers
               members={members}
               org={org}
               onAddMember={handleAddMember}
@@ -374,27 +353,31 @@ export default function OrganizationDetail() {
               onDeleteMember={handleDeleteMember}
               onPromoteMember={handlePromoteMember}
             />
-        ) : activeTabPage === "photos" ? (
-          <OrganizationPhotos
-            org={org}
-            onPhotoAdd={(updatedPhotos) => {
-              setOrg((prev) => ({
-                ...prev,
-                photos: updatedPhotos,
-              }));
-            }}
-          />
-        ) : (
-          <EventsSection
-            events={events}
-            activeTab={activeTab}
-            search={search}
-            setSearch={setSearch}
-            setActiveTab={setActiveTab}
-            orgId={id}
-            navigate={navigate}
-          />
-        )}
+          ) : activeTabPage === "photos" ? (
+            <OrganizationPhotos
+              org={org}
+              onPhotoAdd={(updatedPhotos) => {
+                setOrg((prev) => ({
+                  ...prev,
+                  photos: updatedPhotos,
+                }));
+              }}
+            />
+          ) : (
+            <EventsSection
+              events={events}
+              activeTab={activeTab}
+              search={search}
+              setSearch={setSearch}
+              setActiveTab={setActiveTab}
+              orgId={id}
+              navigate={navigate}
+            />
+          )}
+
+        </div>
+
+      </div>
 
       {/* CTA */}
       <div className="mt-auto pt-12 bg-blue-600 text-white p-6 rounded-lg text-center">

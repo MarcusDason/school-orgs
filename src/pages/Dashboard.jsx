@@ -132,8 +132,8 @@ export default function Dashboard() {
   }
 
   if (authLoading) {
-    // Don't know role yet → show neutral skeleton (or nothing)
-    return <FeedSkeleton />
+    // // Don't know role yet → show neutral skeleton (or nothing)
+    // return <FeedSkeleton />
   }
 
   if (dataLoading) {
