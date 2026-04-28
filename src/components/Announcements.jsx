@@ -7,8 +7,10 @@ import {
   onValue,
   get,
   serverTimestamp,
+  remove,
 } from "firebase/database"
 import { onAuthStateChanged } from "firebase/auth"
+
 
 // COmponents
 import AnnouncementCard from "./AnnouncementCard"
@@ -30,6 +32,9 @@ export default function Announcements({ role = "user" }) {
 
   const isAdmin = role?.toLowerCase() === "admin"
   const canPost = isMember || isAdmin
+
+  const [editMessage, setEditMessage] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
 
   // ================= AUTH =================
   useEffect(() => {
@@ -178,6 +183,16 @@ export default function Announcements({ role = "user" }) {
   const isRead = (item) =>
     item.readBy?.[currentUser?.uid] === true
 
+  const handleDelete = async (item) => {
+    await remove(ref(db, `announcements/${item.id}`))
+  }
+
+  const handleEdit = (item) => {
+    setSelectedAnnouncement(item)
+    setEditMessage(item.message)
+    setIsEditing(true)
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">
 
@@ -204,9 +219,15 @@ export default function Announcements({ role = "user" }) {
               key={item.id}
               item={item}
               isRead={isRead(item)}
-              onClick={setSelectedAnnouncement}
+              onClick={(item) => {
+                setSelectedAnnouncement(item)
+                setEditMessage(item.message)
+                setIsEditing(false)
+              }}
               formatDate={formatDate}
               currentUser={currentUser}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
             />
           ))
         )}
@@ -315,6 +336,10 @@ export default function Announcements({ role = "user" }) {
         formatDate={formatDate}
         currentUser={currentUser}
         userOrgs={userOrgs}
+        editMessage={editMessage}
+        setEditMessage={setEditMessage}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
       />
     </div>
   )
