@@ -10,6 +10,11 @@ import {
 } from "firebase/database"
 import { onAuthStateChanged } from "firebase/auth"
 
+// COmponents
+import AnnouncementCard from "./AnnouncementCard"
+import AnnouncementModal from "./AnnouncementModal"
+import { formatDate } from "../utils/date"
+
 export default function Announcements({ role = "user" }) {
   const [announcements, setAnnouncements] = useState([])
   const [message, setMessage] = useState("")
@@ -19,6 +24,9 @@ export default function Announcements({ role = "user" }) {
 
   const [currentUser, setCurrentUser] = useState(null)
   const [isMember, setIsMember] = useState(false)
+
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState(null)
+  const [userCache, setUserCache] = useState({})
 
   const isAdmin = role?.toLowerCase() === "admin"
   const canPost = isMember || isAdmin
@@ -84,23 +92,44 @@ export default function Announcements({ role = "user" }) {
 
   // ================= ANNOUNCEMENTS =================
   useEffect(() => {
-    const refAnn = ref(db, "announcements")
+  const refAnn = ref(db, "announcements")
 
-    const unsub = onValue(refAnn, (snap) => {
-      const data = snap.val() || {}
+  const unsub = onValue(refAnn, async (snap) => {
+    const data = snap.val() || {}
+    const entries = Object.entries(data)
 
-      const list = Object.entries(data).map(([id, item]) => ({
-        id,
-        ...item,
-      }))
+    const enriched = await Promise.all(
+      entries.map(async ([id, item]) => {
+        let senderName = "Unknown"
 
-      list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
-      setAnnouncements(list)
-    })
+        if (item.userId) {
+          const userSnap = await get(ref(db, `users/${item.userId}`))
 
-    return () => unsub()
-  }, [])
+          if (userSnap.exists()) {
+            const userData = userSnap.val()
 
+            senderName =
+              userData.fullName ||
+              userData.name ||
+              userData.displayName ||
+              "Unknown"
+          }
+        }
+
+        return {
+          id,
+          ...item,
+          senderName,
+        }
+      })
+    )
+
+    enriched.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
+    setAnnouncements(enriched)
+  })
+
+  return () => unsub()
+}, [])
   // ================= TOGGLE ORGS =================
   const toggleOrg = (id) => {
     setSelectedOrgs((prev) =>
@@ -146,6 +175,8 @@ export default function Announcements({ role = "user" }) {
       minute: "numeric",
     })
   }
+  const isRead = (item) =>
+    item.readBy?.[currentUser?.uid] === true
 
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)]">
@@ -159,26 +190,26 @@ export default function Announcements({ role = "user" }) {
 
       {/* LIST */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {announcements.map((item) => (
-          <div
-            key={item.id}
-            className="border border-gray-200 dark:border-gray-700 rounded-xl p-3"
-          >
-            <p className="text-sm text-gray-800 dark:text-gray-200">
-              {item.message}
-            </p>
-
-            {item.orgIds?.length > 0 && (
-              <p className="text-xs text-blue-500 mt-1">
-                Sent to {item.orgIds.length} organization(s)
-              </p>
-            )}
-
-            <p className="text-xs text-gray-400 mt-2">
-              {formatDate(item.createdAt)}
+        {announcements.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center text-gray-400">
+            <div className="text-4xl mb-2">📭</div>
+            <p className="text-sm font-medium">No announcements yet</p>
+            <p className="text-xs text-gray-500">
+              When someone posts, it will appear here.
             </p>
           </div>
-        ))}
+        ) : (
+          announcements.map((item) => (
+            <AnnouncementCard
+              key={item.id}
+              item={item}
+              isRead={isRead(item)}
+              onClick={setSelectedAnnouncement}
+              formatDate={formatDate}
+              currentUser={currentUser}
+            />
+          ))
+        )}
       </div>
 
       {/* DIVIDER */}
@@ -277,6 +308,14 @@ export default function Announcements({ role = "user" }) {
 
         </div>
       )}
+
+      <AnnouncementModal
+        announcement={selectedAnnouncement}
+        onClose={() => setSelectedAnnouncement(null)}
+        formatDate={formatDate}
+        currentUser={currentUser}
+        userOrgs={userOrgs}
+      />
     </div>
   )
 }
