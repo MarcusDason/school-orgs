@@ -142,12 +142,11 @@ export default function ServiceDetail() {
     showToast("Step updated successfully!");
   };
 
-  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+  const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
   const handleStepFile = (file, index) => {
     if (!file) return;
 
-    // ❌ SIZE CHECK FIRST
     if (file.size > MAX_FILE_SIZE) {
       showToast("File too large! Max allowed is 2MB.");
       return;

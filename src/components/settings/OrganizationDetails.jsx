@@ -2,70 +2,38 @@ import React, { useState, useEffect } from "react";
 import { FaCalendarAlt, FaBullseye, FaPen } from "react-icons/fa";
 import { db } from "../../firebase/config";
 import { ref, update } from "firebase/database";
-import {
-  getStorage,
-  ref as storageRef,
-  uploadBytes,
-  getDownloadURL,
-} from "firebase/storage";
-import { ImageIcon } from "lucide-react";
+import { SquarePen } from "lucide-react";
 
 export default function OrganizationDetails({ org, onSave, userCanManage }) {
   const [name, setName] = useState(org?.name || "");
   const [description, setDescription] = useState(org?.description || "");
   const [mission, setMission] = useState(org?.mission || "");
-  const [image, setImage] = useState(org?.image || "");
-  const [preview, setPreview] = useState(null);
-  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  // edit states
+  const [editField, setEditField] = useState(null); 
+  // "name" | "description" | "mission" | null
 
   useEffect(() => {
     if (!org) return;
     setName(org.name || "");
     setDescription(org.description || "");
     setMission(org.mission || "");
-    setImage(org.image || "");
   }, [org]);
-
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (!selectedFile || !userCanManage) return;
-
-    setFile(selectedFile);
-
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result);
-    reader.readAsDataURL(selectedFile);
-  };
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      let imageUrl = image;
-
-      if (file) {
-        const storage = getStorage();
-        const storageReference = storageRef(
-          storage,
-          `organization_images/${org.id}-${Date.now()}`
-        );
-        await uploadBytes(storageReference, file);
-        imageUrl = await getDownloadURL(storageReference);
-      }
-
       const updatedData = {
         name,
         description,
         mission,
-        image: imageUrl,
       };
 
       await update(ref(db, `organizations/${org.id}`), updatedData);
       onSave?.(updatedData);
 
-      setImage(updatedData.image);
-      setPreview(null);
-      setFile(null);
+      setEditField(null);
     } catch (err) {
       console.error(err);
       alert("Failed to save.");
@@ -74,87 +42,94 @@ export default function OrganizationDetails({ org, onSave, userCanManage }) {
     }
   };
 
-  const displayImage = preview || image;
-
   return (
     <div>
+      {/* ================= NAME ================= */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-1">
+          <label className="font-semibold dark:text-white">Name</label>
 
-      {/* ================= IMAGE ================= */}
-      <div className="flex items-center gap-4 mb-6">
-
-        {/* IMAGE BOX */}
-        <div className="w-24 h-24 rounded-lg border overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-
-          {displayImage ? (
-            <img
-              src={displayImage}
-              alt="Organization"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-300">
-              <ImageIcon className="w-6 h-6 mb-1" />
-              <span className="text-[10px] text-center">No image</span>
-            </div>
+          {userCanManage && (
+            <button onClick={() => setEditField("name")}>
+              <SquarePen size={14} className="text-black dark:text-white"/>
+            </button>
           )}
-
         </div>
 
-        {/* FILE INPUT */}
-        {userCanManage && (
+        {editField === "name" ? (
           <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="border p-2 rounded dark:bg-gray-700 dark:text-white"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => setEditField(null)}
+            className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+            autoFocus
           />
+        ) : (
+          <p className="dark:text-white">{name || "—"}</p>
         )}
-
       </div>
 
-      {/* NAME */}
+      {/* ================= DESCRIPTION ================= */}
       <div className="mb-4">
-        <label className="block mb-1 font-semibold dark:text-white">
-          Name
-        </label>
-        <input
-          type="text"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-        />
-      </div>
+        <div className="flex items-center gap-2 mb-1">
+          <label className="font-semibold dark:text-white">Description</label>
 
-      {/* DESCRIPTION */}
-      <div className="mb-4">
-        <label className="block mb-1 font-semibold dark:text-white">
-          Description
-        </label>
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-        />
-      </div>
+          {userCanManage && (
+            <button onClick={() => setEditField("description")}>
+              <SquarePen size={14} className="text-black dark:text-white"/>
+            </button>
+          )}
+        </div>
 
-      {/* MISSION */}
-      <div className="mb-4 flex items-start gap-3">
-        <FaBullseye className="text-blue-600 dark:text-blue-400 text-2xl mt-1" />
-        <div className="flex-1">
-          <label className="block mb-1 font-semibold dark:text-white">
-            Mission
-          </label>
+        {editField === "description" ? (
           <textarea
-            value={mission}
-            onChange={(e) => setMission(e.target.value)}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={() => setEditField(null)}
             rows={3}
             className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+            autoFocus
           />
+        ) : (
+          <p className="dark:text-white whitespace-pre-wrap">
+            {description || "—"}
+          </p>
+        )}
+      </div>
+
+      {/* ================= MISSION ================= */}
+      <div className="mb-4 flex items-start gap-3">
+        <FaBullseye className="text-blue-600 dark:text-blue-400 text-2xl mt-1" />
+
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <label className="font-semibold dark:text-white">Mission</label>
+
+            {userCanManage && (
+              <button onClick={() => setEditField("mission")}>
+                <SquarePen size={14} className="text-black dark:text-white" />
+              </button>
+            )}
+          </div>
+
+          {editField === "mission" ? (
+            <textarea
+              value={mission}
+              onChange={(e) => setMission(e.target.value)}
+              onBlur={() => setEditField(null)}
+              rows={3}
+              className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
+              autoFocus
+            />
+          ) : (
+            <p className="dark:text-white whitespace-pre-wrap">
+              {mission || "—"}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* DATE */}
+      {/* ================= DATE ================= */}
       <div className="flex items-center gap-2 mb-6 text-gray-700 dark:text-gray-300">
         <FaCalendarAlt className="text-blue-600 dark:text-blue-400" />
         <span>
@@ -169,7 +144,7 @@ export default function OrganizationDetails({ org, onSave, userCanManage }) {
         </span>
       </div>
 
-      {/* SAVE */}
+      {/* ================= SAVE ================= */}
       {userCanManage && (
         <button
           onClick={handleSave}

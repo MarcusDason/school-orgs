@@ -6,6 +6,7 @@ import { Upload, User, Users, Image as ImageIcon, Save, Trash2 } from "lucide-re
 import { useNavigate } from "react-router-dom";
 
 import { loadModels, detectFace } from "../utils/detectIfPersonImage";
+import AddMemberModal from "../components/AddMemberModal";
 
 
 export default function AddOrganization() {
@@ -22,6 +23,8 @@ export default function AddOrganization() {
   const [members, setMembers] = useState([]);
   const [editIndex, setEditIndex] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const navigate = useNavigate();
 
   const handleImage = async (e, setFile, setPreview, { detectPerson = false } = {}) => {
@@ -69,7 +72,7 @@ export default function AddOrganization() {
 
     const newMember = {
       fullName: memberName,
-      position: memberPosition,
+      position: memberPosition,  // Include position here
       profilePic: memberPreview,
     };
 
@@ -83,7 +86,7 @@ export default function AddOrganization() {
     }
 
     setMemberName("");
-    setMemberPosition("");
+    setMemberPosition(""); 
     setMemberPic(null);
     setMemberPreview(null);
   };
@@ -216,100 +219,46 @@ export default function AddOrganization() {
           </div>
         </div>
 
-        {/* Members Card */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg p-6">
           <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
             <Users className="w-6 h-6" /> Members
           </h2>
 
           <div className="grid md:grid-cols-2 gap-6 items-center">
-
-            {/* Inputs */}
+            {/* Add Member Button */}
             <div className="space-y-3">
-              <div className="flex items-center gap-2 border dark:border-gray-700 p-3 rounded-lg bg-white dark:bg-gray-800">
-                <User className="w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Full Name"
-                  value={memberName}
-                  onChange={(e) => setMemberName(e.target.value)}
-                  className="w-full bg-transparent outline-none text-gray-800 dark:text-white"
-                />
-              </div>
-
-              <select
-                value={memberPosition}
-                onChange={(e) => setMemberPosition(e.target.value)}
-                className="w-full border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white p-3 rounded-lg"
-              >
-                <option value="">Select Position</option>
-
-                {/* Unique Roles */}
-                <option
-                  disabled={members.some(m => m.position === "President") && memberPosition !== "President"}
-                >President</option>
-
-                <option
-                  disabled={members.some(m => m.position === "Vice President") && memberPosition !== "Vice President"}
-                >Vice President</option>
-
-                {/* Non-unique roles */}
-                <option>Secretary</option>
-                <option>Treasurer</option>
-                <option>Member</option>
-              </select>
-
-              <label className="flex items-center gap-2 border dark:border-gray-700 p-3 rounded-lg cursor-pointer bg-white dark:bg-gray-800">
-                <Upload className="w-5 h-5 text-gray-400" />
-                <span className="text-gray-600 dark:text-gray-300">Upload Profile</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) =>
-                        handleImage(e, setMemberPic, setMemberPreview, {
-                            detectPerson: true,
-                        })
-                    }
-                  className="hidden"
-                />
-              </label>
-
               <button
-                onClick={handleAddMember}
+                onClick={() => setIsModalOpen(true)} // Open the modal
                 className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
               >
                 <User className="w-5 h-5" />
-                {editIndex !== null ? "Update Member" : "Add Member"}
+                Add Member
               </button>
-            </div>
-
-            {/* Preview */}
-            <div className="flex justify-center">
-              {memberPreview ? (
-                <img src={memberPreview} className="w-32 h-32 rounded-full object-cover shadow-lg border-4 border-white dark:border-gray-700" />
-              ) : (
-                <div className="w-32 h-32 flex items-center justify-center rounded-full bg-gray-200 dark:bg-gray-700 text-gray-500">
-                  <ImageIcon />
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Members List WITH DELETE */}
+          {/* Members List */}
           <div className="mt-6 grid sm:grid-cols-2 gap-4">
             {members.map((m, i) => (
               <div
                 key={i}
                 className="flex items-center justify-between gap-4 p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition"
               >
-                <div
-                  onClick={() => handleEditMember(i)}
-                  className="flex items-center gap-4 cursor-pointer flex-1"
-                >
-                  <img src={m.profilePic} className="w-14 h-14 rounded-full object-cover" />
+                <div className="flex items-center gap-4 cursor-pointer flex-1">
+                  {m.profilePic ? (
+                    <img
+                      src={m.profilePic}
+                      className="w-14 h-14 rounded-full object-cover"
+                      alt={m.fullName}
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                      {m.fullName.charAt(0).toUpperCase()}  {/* Show first letter of name */}
+                    </div>
+                  )}
                   <div>
                     <p className="font-semibold text-gray-800 dark:text-white">{m.fullName}</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{m.position}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{m.position}</p> {/* Display position */}
                   </div>
                 </div>
 
@@ -323,6 +272,18 @@ export default function AddOrganization() {
             ))}
           </div>
         </div>
+
+        {/* AddMemberModal Component */}
+        <AddMemberModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={(userWithPosition) => {
+            // Add user with position
+            setMembers((prevMembers) => [...prevMembers, userWithPosition]);
+            setIsModalOpen(false);
+          }}
+          existingMembers={members}
+        />
 
         <button
           onClick={handleSubmit}
