@@ -15,11 +15,11 @@ export default function AnnouncementCard({
 
   return (
     <div
-      className={`relative group cursor-pointer border rounded-xl p-3 transition
+      className={`relative group cursor-pointer rounded-xl p-3 transition
         ${
           isRead
             ? "bg-white dark:bg-gray-800"
-            : "bg-blue-50 dark:bg-gray-900 border-blue-400"
+            : "bg-blue-50 dark:bg-blue-900 border-blue-400"
         }`}
     >
       {/* MAIN CONTENT */}
@@ -30,7 +30,7 @@ export default function AnnouncementCard({
           </div>
         )}
 
-        <p className="text-sm text-gray-800 dark:text-gray-200">
+        <p className="text-sm text-gray-800 dark:text-gray-200 line-clamp-3 break-words">
           {item.message}
         </p>
 
@@ -57,9 +57,9 @@ export default function AnnouncementCard({
               e.stopPropagation()
               onEdit(item)
             }}
-            className="text-gray-500 hover:text-blue-600"
+            className="text-black hover:text-blue-600"
           >
-            <SquarePen size={16} />
+            <SquarePen size={16}/>
           </button>
 
           <button
@@ -67,9 +67,9 @@ export default function AnnouncementCard({
               e.stopPropagation()
               onDelete(item)
             }}
-            className="text-gray-500 hover:text-red-600"
+            className="text-black-500 hover:text-red-600"
           >
-            <Trash size={16} />
+            <Trash size={16}/>
           </button>
         </div>
       )}
