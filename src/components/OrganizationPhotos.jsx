@@ -1,114 +1,128 @@
-import React, { useState, useEffect } from "react";
-import { db, auth } from "../firebase/config";
-import { ref, update, get, query, orderByChild, equalTo, onValue } from "firebase/database";
-import { onAuthStateChanged } from "firebase/auth";
+import React, { useState, useEffect, useRef } from "react"
+import { db, auth } from "../firebase/config"
+import {
+  ref,
+  update,
+  get,
+  query,
+  orderByChild,
+  equalTo,
+  onValue,
+} from "firebase/database"
+import { onAuthStateChanged } from "firebase/auth"
 
 export default function OrganizationPhotos({ org, onPhotoAdd }) {
-  if (!org) return null;
+  if (!org) return null
 
-  const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [role, setRole] = useState("user");
-  const [orgMembers, setOrgMembers] = useState([]);
+  const fileInputRef = useRef(null)
+
+  const [uploading, setUploading] = useState(false)
+  const [preview, setPreview] = useState(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [role, setRole] = useState("user")
+  const [orgMembers, setOrgMembers] = useState([])
+  const [zoomImage, setZoomImage] = useState(null)
 
   const photos = org.photos
     ? Array.isArray(org.photos)
       ? org.photos
       : Object.values(org.photos)
-    : [];
+    : []
 
   // =========================
   // 🔐 GET USER ROLE
   // =========================
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const snapshot = await get(ref(db, `users/${user.uid}`));
-          if (snapshot.exists()) {
-            setRole(snapshot.val().role || "user");
-          }
-        } catch (err) {
-          console.error("Error fetching role:", err);
-        }
-      }
-    });
+      if (!user) return
 
-    return () => unsubscribe();
-  }, []);
+      try {
+        const snapshot = await get(ref(db, `users/${user.uid}`))
+        if (snapshot.exists()) {
+          setRole(snapshot.val().role || "user")
+        }
+      } catch (err) {
+        console.error("Error fetching role:", err)
+      }
+    })
+
+    return () => unsubscribe()
+  }, [])
 
   // =========================
   // 👥 GET ORG MEMBERS
   // =========================
   useEffect(() => {
-    if (!org?.id) return;
+    if (!org?.id) return
 
-    const membersRef = ref(db, "members");
-    const q = query(membersRef, orderByChild("orgId"), equalTo(org.id));
+    const membersRef = ref(db, "members")
+    const q = query(membersRef, orderByChild("orgId"), equalTo(org.id))
 
     const unsubscribe = onValue(q, (snapshot) => {
-      const data = snapshot.val() || {};
-      setOrgMembers(Object.values(data));
-    });
+      const data = snapshot.val() || {}
+      setOrgMembers(Object.values(data))
+    })
 
-    return () => unsubscribe();
-  }, [org]);
+    return () => unsubscribe()
+  }, [org])
 
-  // =========================
-  // 🔐 PERMISSION CHECK
-  // =========================
+  const currentUid = auth.currentUser?.uid
+
   const userCanManage =
     role === "admin" ||
-    orgMembers.some((m) => m.uid === auth.currentUser?.uid);
+    orgMembers.some((m) => m.uid === currentUid)
 
+  // =========================
+  // 📁 FILE HANDLERS
+  // =========================
   const handleOpenFile = () => {
-    document.getElementById("photoInput").click();
-  };
+    fileInputRef.current?.click()
+  }
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]
+    if (!file) return
 
-    setSelectedFile(file);
-    setIsModalOpen(true);
+    const reader = new FileReader()
 
-    const reader = new FileReader();
     reader.onloadend = () => {
-      setPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleUpload = async () => {
-    if (!userCanManage) {
-      alert("You are not allowed to upload photos.");
-      return;
+      setPreview(reader.result)
+      setIsModalOpen(true)
     }
 
-    if (!preview) return;
+    reader.readAsDataURL(file)
+  }
 
-    setUploading(true);
+  // =========================
+  // ☁️ UPLOAD
+  // =========================
+  const handleUpload = async () => {
+    if (!userCanManage) {
+      alert("You are not allowed to upload photos.")
+      return
+    }
+
+    if (!preview) return
+
+    setUploading(true)
 
     try {
-      const updatedPhotos = [...photos, preview];
+      const updatedPhotos = [...photos, preview]
 
       await update(ref(db, `organizations/${org.id}`), {
         photos: updatedPhotos,
-      });
+      })
 
-      onPhotoAdd?.(updatedPhotos);
+      onPhotoAdd?.(updatedPhotos)
 
-      setSelectedFile(null);
-      setPreview(null);
-      setIsModalOpen(false);
+      setPreview(null)
+      setIsModalOpen(false)
     } catch (err) {
-      console.error("Upload failed:", err);
+      console.error("Upload failed:", err)
     }
 
-    setUploading(false);
-  };
+    setUploading(false)
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
@@ -119,18 +133,17 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
           Organization Photos
         </h2>
 
-        {/* 🔒 BUTTON RESTRICTED */}
         {userCanManage && (
           <button
             onClick={handleOpenFile}
-            className="text-black font-medium dark:text-white cursor-pointer flex items-center gap-1"
+            className="text-black font-medium dark:text-white cursor-pointer"
           >
             + Add Photo
           </button>
         )}
 
         <input
-          id="photoInput"
+          ref={fileInputRef}
           type="file"
           accept="image/*"
           onChange={handleFileChange}
@@ -145,28 +158,19 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
           photos.map((photo, index) => (
             <div
               key={index}
-              className="
-                relative overflow-hidden rounded-lg
-                bg-gray-200 dark:bg-gray-700
-                aspect-square
-                group cursor-pointer
-              "
+              className="relative overflow-hidden rounded-lg bg-gray-200 dark:bg-gray-700 aspect-square group"
             >
               <img
                 src={photo}
                 alt={`photo-${index}`}
-                className="
-                  w-full h-full object-cover
-                  transition duration-300
-                  group-hover:scale-110
-                "
+                onClick={() => {
+                  setZoomImage(photo)
+                }}
+                className="w-full h-full object-cover transition duration-300 group-hover:scale-110 cursor-zoom-in"
               />
-
-              <div className="
-                absolute inset-0 bg-black/0
-                group-hover:bg-black/20
-                transition
-              " />
+              <div
+                className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition pointer-events-none"
+              />
             </div>
           ))
         ) : (
@@ -177,7 +181,7 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
 
       </div>
 
-      {/* MODAL */}
+      {/* UPLOAD MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-[90%] max-w-md">
@@ -199,9 +203,8 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => {
-                  setIsModalOpen(false);
-                  setPreview(null);
-                  setSelectedFile(null);
+                  setIsModalOpen(false)
+                  setPreview(null)
                 }}
                 className="px-3 py-1 border rounded dark:border-gray-600 dark:text-white"
               >
@@ -220,6 +223,24 @@ export default function OrganizationPhotos({ org, onPhotoAdd }) {
           </div>
         </div>
       )}
+
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
+          onClick={() => {
+            console.log("closing zoom")
+            setZoomImage(null)
+          }}
+        >
+          <img
+            src={zoomImage}
+            alt="zoom"
+            className="max-w-[95%] max-h-[95%] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
     </div>
-  );
+  )
 }

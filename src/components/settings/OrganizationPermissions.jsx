@@ -10,6 +10,7 @@ export default function OrganizationPermissions({ permissions , orgId}) {
   const PERMISSIONS = [
     { key: "postEvent", label: "Posting Events" },
     { key: "postCompetition", label: "Posting Competitions" },
+    { key: "postAnnouncement", label: "Posting Announcements" },
     { key: "editSettings", label: "Editing Settings" },
   ];
 
@@ -41,7 +42,7 @@ export default function OrganizationPermissions({ permissions , orgId}) {
 console.log("orgId:", orgId);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-10">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-8 mb-10">
       {activePerm === null ? (
         <>
           <h2 className="text-3xl font-bold mb-6 dark:text-white">

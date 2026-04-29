@@ -6,8 +6,9 @@ import { useState } from "react";
 export default function EventPhotos({ event, setEvent , userCanEdit}) {
   const [photoToDelete, setPhotoToDelete] = useState(null);
   const [showPostModal, setShowPostModal] = useState(false);
-  const [newPhotos, setNewPhotos] = useState([]); // { file, preview (base64) }
+  const [newPhotos, setNewPhotos] = useState([]); 
   const [postLink, setPostLink] = useState("");
+  const [zoomImage, setZoomImage] = useState(null);
 
   // DELETE PHOTO
   const handleDeletePhoto = async (indexToDelete) => {
@@ -114,14 +115,15 @@ export default function EventPhotos({ event, setEvent , userCanEdit}) {
                 )}
               </div>
 
-              <img
-                src={photo.src}
-                alt={`event-photo-${index}`}
-                className="w-full h-full object-cover hover:scale-110 transition cursor-pointer"
-                onClick={() => {
-                  if (photo.link) window.open(photo.link, "_blank");
-                }}
-              />
+                <img
+                  src={photo.src}
+                  alt={`event-photo-${index}`}
+                  className="w-full h-full object-cover hover:scale-110 transition cursor-zoom-in"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setZoomImage(photo.src);
+                  }}
+                />
             </div>
           ))
         ) : (
@@ -244,6 +246,20 @@ export default function EventPhotos({ event, setEvent , userCanEdit}) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {zoomImage && (
+        <div
+          className="fixed inset-0 z-[99999] bg-black/90 flex items-center justify-center"
+          onClick={() => setZoomImage(null)}
+        >
+          <img
+            src={zoomImage}
+            alt="zoom"
+            className="max-w-[95%] max-h-[95%] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
