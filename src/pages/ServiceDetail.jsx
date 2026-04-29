@@ -142,16 +142,26 @@ export default function ServiceDetail() {
     showToast("Step updated successfully!");
   };
 
+  const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
   const handleStepFile = (file, index) => {
+    if (!file) return;
+
+    // ❌ SIZE CHECK FIRST
+    if (file.size > MAX_FILE_SIZE) {
+      showToast("File too large! Max allowed is 2MB.");
+      return;
+    }
+
     const reader = new FileReader();
 
     reader.onloadend = async () => {
-      const raw = service.stepFiles?.[index];
+      const rawFiles = service.stepFiles?.[index];
 
-      const existingFiles = Array.isArray(raw)
-        ? raw
-        : raw
-        ? [raw]
+      const existingFiles = Array.isArray(rawFiles)
+        ? rawFiles
+        : rawFiles
+        ? [rawFiles]
         : [];
 
       const updated = {
