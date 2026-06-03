@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
+import Profile from "./pages/Profile"; // <-- Import Profile Page
 
 // Components
 import Navbar from "./components/Navbar";
@@ -35,7 +36,6 @@ function App() {
   return (
     <BrowserRouter>
       <div className="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
-        
         {/* Navbar */}
         <Navbar darkMode={darkMode} setDarkMode={setDarkMode} />
 
@@ -45,7 +45,6 @@ function App() {
           <Route path="/signup" element={<Signup />} />
 
           {/* ================= PROTECTED ROUTES ================= */}
-
           <Route
             path="/"
             element={
@@ -54,7 +53,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/organizations"
             element={
@@ -63,7 +61,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/organizations/:id"
             element={
@@ -72,7 +69,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/organizations/:orgId/events/:eventId"
             element={
@@ -81,7 +77,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/organizations/:orgId/add-event"
             element={
@@ -90,7 +85,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/add-organization"
             element={
@@ -99,9 +93,8 @@ function App() {
               </ProtectedRoute>
             }
           />
-
+          
           {/* ================= SERVICES ================= */}
-
           <Route
             path="/services"
             element={
@@ -110,12 +103,21 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/services/:id"
             element={
               <ProtectedRoute>
                 <ServiceDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* ================= PROFILE PAGE ================= */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

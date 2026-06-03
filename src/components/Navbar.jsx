@@ -9,7 +9,8 @@ import {
   Building2,
   LogOut,
   Briefcase,
-  House
+  House,
+  User as UserIcon // <-- Add the User icon here
 } from "lucide-react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { signOut } from "firebase/auth";
@@ -79,10 +80,16 @@ export default function Navbar({ darkMode, setDarkMode }) {
           Organizations
         </NavLink>
 
-        {/* ✅ Services */}
+        {/* Services */}
         <NavLink to="/services" className={linkClass}>
           <Briefcase size={20} />
           Services
+        </NavLink>
+
+        {/* Profile Link */}
+        <NavLink to="/profile" className={linkClass}>
+          <UserIcon size={20} />
+          Profile
         </NavLink>
 
         {/* Dark Mode */}
@@ -153,7 +160,7 @@ export default function Navbar({ darkMode, setDarkMode }) {
           Organizations
         </NavLink>
 
-        {/* ✅ Services Mobile */}
+        {/* Services Mobile */}
         <NavLink
           to="/services"
           className={linkClass}
@@ -161,6 +168,16 @@ export default function Navbar({ darkMode, setDarkMode }) {
         >
           <Briefcase size={20} />
           Services
+        </NavLink>
+
+        {/* Profile Mobile */}
+        <NavLink
+          to="/profile"
+          className={linkClass}
+          onClick={() => setIsOpen(false)}
+        >
+          <UserIcon size={20} />
+          Profile
         </NavLink>
 
         {/* Auth Mobile */}

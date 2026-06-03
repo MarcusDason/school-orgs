@@ -1,0 +1,198 @@
+import { useState, useEffect } from "react";
+import { auth, db, storage } from "../firebase/config"; // Firebase configuration
+import { useNavigate } from "react-router-dom";
+import { onAuthStateChanged, updateProfile } from "firebase/auth";
+import { ref, get, update } from "firebase/database";
+import { User } from "lucide-react";
+import { uploadBytesResumable, getDownloadURL, ref as storageRef } from "firebase/storage"; // Import storage functions
+
+export default function Profile() {
+  const [user, setUser] = useState(null);
+  const [name, setName] = useState(""); // Name state to display
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false); // Add a state for saving indicator
+  const [profilePic, setProfilePic] = useState(null); // State to store profile image
+  const [profilePicPreview, setProfilePicPreview] = useState(null); // Preview the uploaded image
+  const navigate = useNavigate();
+
+  // Fetch user info when the component mounts
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        setEmail(currentUser.email);
+
+        // Fetch the fullName and profilePic from the Realtime Database
+        const userRef = ref(db, "users/" + currentUser.uid);
+        const snapshot = await get(userRef);
+        const userData = snapshot.val();
+        
+        if (userData) {
+          setName(userData.fullName); // Set the fullName from the database
+          setProfilePic(userData.profilePic); // Set the profilePic URL from the database
+          if (userData.profilePic) {
+            setProfilePicPreview(userData.profilePic); // Set profile pic preview if exists
+          }
+        }
+      } else {
+        navigate("/login"); // Redirect to login if user is not authenticated
+      }
+      setLoading(false);
+    });
+
+    // Cleanup on unmount
+    return () => unsubscribe();
+  }, [navigate]);
+
+  // Handle image upload
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+
+    // Create a storage reference
+    const storageReference = storageRef(storage, `profile_pics/${user.uid}`);
+
+    const uploadTask = uploadBytesResumable(storageReference, file);
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        // You can monitor the upload progress here
+      },
+      (error) => {
+        console.error("Error uploading image:", error);
+      },
+      async () => {
+        // Get the uploaded image URL
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+        // Set the image URL to Firebase Realtime Database
+        const userRef = ref(db, "users/" + user.uid);
+        await update(userRef, {
+          fullName: name,
+          email: user.email,
+          profilePic: downloadURL,
+        });
+
+        // Update the profile picture preview
+        setProfilePicPreview(downloadURL);
+        alert("Profile picture updated!");
+      }
+    );
+  };
+
+  const handleSave = async () => {
+    if (isSaving) {
+      // Prevent multiple clicks while saving
+      return;
+    }
+
+    setIsSaving(true); // Set saving state to true
+
+    if (user && name !== user.displayName) {
+      try {
+        console.log("Updating profile...");
+
+        // Update the displayName in Firebase Authentication
+        await updateProfile(user, { displayName: name });
+
+        // Now update the fullName in Firebase Realtime Database
+        const userRef = ref(db, "users/" + user.uid); // Reference to user's data in Realtime Database
+        await update(userRef, {
+          fullName: name,
+          email: user.email,
+          profilePic: profilePicPreview,
+        });
+
+        console.log("Profile updated successfully.");
+        alert("Profile updated successfully!");
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        alert("Error updating profile.");
+      } finally {
+        setIsSaving(false); // Set saving state back to false
+      }
+    } else {
+      setIsSaving(false); // If no changes are made, set saving state back to false
+    }
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <div className="container mx-auto p-4">
+      <div className="max-w-lg mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
+          Profile
+        </h2>
+
+        {/* Profile Details */}
+        <div className="flex justify-center mt-4">
+          <div className="w-24 h-24 rounded-full overflow-hidden">
+            {profilePicPreview ? (
+              <img
+                src={profilePicPreview}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-gray-400 text-white">
+                {name ? name.charAt(0).toUpperCase() : "?"}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Name
+            </label>
+            <input
+              type="text"
+              value={name} // This will show the fetched name
+              onChange={(e) => setName(e.target.value)} // Allow name change
+              className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              readOnly
+              className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Profile Picture
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload} // Handle image upload
+              className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          {/* Save Button */}
+          <button
+            onClick={handleSave}
+            disabled={isSaving} // Disable the button if saving is in progress
+            className={`w-full p-2 mt-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
+          >
+            {isSaving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
