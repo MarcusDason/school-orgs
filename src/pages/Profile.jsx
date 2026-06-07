@@ -46,7 +46,7 @@ export default function Profile() {
       if (snapshot.exists()) {
         const data = snapshot.val();
 
-        console.log("PROFILE DATA:", data); // DEBUG
+        console.log("PROFILE DATA:", data);
 
         setName(data.fullName || "");
         setProfilePic(data.profilePic || "");
@@ -65,21 +65,11 @@ export default function Profile() {
 
     const reader = new FileReader();
 
-    reader.onloadend = async () => {
+    reader.onloadend = () => {
       const base64Image = reader.result;
 
       setProfilePicPreview(base64Image);
       setProfilePic(base64Image);
-
-      const userRef = ref(db, "users/" + user.uid);
-
-      await update(userRef, {
-        fullName: name,
-        email: user.email,
-        profilePic: base64Image,
-      });
-
-      alert("Profile picture updated!");
     };
 
     reader.readAsDataURL(file);
@@ -91,21 +81,19 @@ export default function Profile() {
       return;
     }
 
-    setIsSaving(true); // Set saving state to true
+    setIsSaving(true);
 
     if (user && name !== user.displayName) {
       try {
         console.log("Updating profile...");
 
-        // Update the displayName in Firebase Authentication
         await updateProfile(user, { displayName: name });
 
-        // Now update the fullName in Firebase Realtime Database
-        const userRef = ref(db, "users/" + user.uid); // Reference to user's data in Realtime Database
+        const userRef = ref(db, "users/" + user.uid);
         await update(userRef, {
           fullName: name,
           email: user.email,
-          profilePic: profilePic || profilePicPreview || "",
+          profilePic: profilePicPreview || profilePic || "",
         });
 
         console.log("Profile updated successfully.");
@@ -114,10 +102,10 @@ export default function Profile() {
         console.error("Error updating profile:", error);
         alert("Error updating profile.");
       } finally {
-        setIsSaving(false); // Set saving state back to false
+        setIsSaving(false);
       }
     } else {
-      setIsSaving(false); // If no changes are made, set saving state back to false
+      setIsSaving(false);
     }
   };
 
@@ -216,8 +204,8 @@ export default function Profile() {
             </label>
             <input
               type="text"
-              value={name} // This will show the fetched name
-              onChange={(e) => setName(e.target.value)} // Allow name change
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -241,7 +229,7 @@ export default function Profile() {
             <input
               type="file"
               accept="image/*"
-              onChange={handleImageUpload} // Handle image upload
+              onChange={handleImageUpload}
               className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
             />
           </div>
@@ -346,7 +334,7 @@ export default function Profile() {
           {/* Save Button */}
           <button
             onClick={handleSave}
-            disabled={isSaving} // Disable the button if saving is in progress
+            disabled={isSaving}
             className={`w-full p-2 mt-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 ${isSaving ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {isSaving ? "Saving..." : "Save Changes"}
