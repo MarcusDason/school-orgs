@@ -128,17 +128,26 @@ export default function Profile() {
 
     try {
       if (!currentPassword) {
+        setPasswordSuccess("");
         setPasswordError("Please enter your current password.");
         return;
       }
 
       if (newPassword.length < 6) {
+        setPasswordSuccess("");
         setPasswordError("New password must be at least 6 characters.");
         return;
       }
-
       if (newPassword !== confirmNewPassword) {
+        setPasswordSuccess("");
         setPasswordError("Passwords do not match.");
+        return;
+      }
+
+      if (currentPassword === newPassword) {
+        setPasswordError(
+          "New password must be different from your current password."
+        );
         return;
       }
 
@@ -170,7 +179,8 @@ export default function Profile() {
           break;
 
         default:
-          setPasswordError(error.message);
+          setPasswordSuccess("");
+          setPasswordError("Failed to update password. Please try again.");
       }
     }
   };
@@ -249,7 +259,11 @@ export default function Profile() {
             type="password"
             placeholder="Current Password"
             value={currentPassword}
-            onChange={(e) => setCurrentPassword(e.target.value)}
+            onChange={(e) => {
+              setCurrentPassword(e.target.value);
+              setPasswordError("");
+              setPasswordSuccess("");
+            }}
             className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
           />
 
@@ -257,7 +271,11 @@ export default function Profile() {
             type="password"
             placeholder="New Password"
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setPasswordError("");
+              setPasswordSuccess("");
+            }}
             className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
           />
 
@@ -265,7 +283,11 @@ export default function Profile() {
             type="password"
             placeholder="Confirm New Password"
             value={confirmNewPassword}
-            onChange={(e) => setConfirmNewPassword(e.target.value)}
+            onChange={(e) => {
+              setConfirmNewPassword(e.target.value);
+              setPasswordError("");
+              setPasswordSuccess("");
+            }}
             className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
           />
 
