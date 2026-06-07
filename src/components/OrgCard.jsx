@@ -21,60 +21,62 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
       : words.slice(0, 20).join(" ") + "...";
   }, [org.description]);
 
-  const icons = [
-    {
-      bg: "bg-blue-100 dark:bg-blue-900",
-      color: "text-blue-600 dark:text-blue-300",
-      svg: (
-        <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-    },
-    {
-      bg: "bg-green-100 dark:bg-green-900",
-      color: "text-green-600 dark:text-green-300",
-      svg: (
-        <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-      ),
-    },
-    {
-      bg: "bg-yellow-100 dark:bg-yellow-900",
-      color: "text-yellow-600 dark:text-yellow-300",
-      svg: (
-        <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
-        </svg>
-      ),
-    },
-    {
-      bg: "bg-purple-100 dark:bg-purple-900",
-      color: "text-purple-600 dark:text-purple-300",
-      svg: (
-        <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" />
-        </svg>
-      ),
-    },
-    {
-      bg: "bg-pink-100 dark:bg-pink-900",
-      color: "text-pink-600 dark:text-pink-300",
-      svg: (
-        <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      ),
-    },
-  ];
+  // const icons = [
+  //   {
+  //     bg: "bg-blue-100 dark:bg-blue-900",
+  //     color: "text-blue-600 dark:text-blue-300",
+  //     svg: (
+  //       <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+  //         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+  //       </svg>
+  //     ),
+  //   },
+  //   {
+  //     bg: "bg-green-100 dark:bg-green-900",
+  //     color: "text-green-600 dark:text-green-300",
+  //     svg: (
+  //       <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+  //         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+  //       </svg>
+  //     ),
+  //   },
+  //   {
+  //     bg: "bg-yellow-100 dark:bg-yellow-900",
+  //     color: "text-yellow-600 dark:text-yellow-300",
+  //     svg: (
+  //       <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+  //         <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3" />
+  //       </svg>
+  //     ),
+  //   },
+  //   {
+  //     bg: "bg-purple-100 dark:bg-purple-900",
+  //     color: "text-purple-600 dark:text-purple-300",
+  //     svg: (
+  //       <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+  //         <circle cx="12" cy="12" r="10" />
+  //       </svg>
+  //     ),
+  //   },
+  //   {
+  //     bg: "bg-pink-100 dark:bg-pink-900",
+  //     color: "text-pink-600 dark:text-pink-300",
+  //     svg: (
+  //       <svg fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+  //         <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+  //       </svg>
+  //     ),
+  //   },
+  // ];
 
-  const iconIndex =
-    index != null
-      ? index % icons.length
-      : org.id.charCodeAt(0) % icons.length;
+  // const iconIndex =
+  //   index != null
+  //     ? index % icons.length
+  //     : org.id.charCodeAt(0) % icons.length;
 
-  const icon = icons[iconIndex];
+  // const icon = icons[iconIndex];
+
+  const orgImage = org.image || null;
 
   const confirmDelete = async () => {
     try {
@@ -188,10 +190,16 @@ function OrgCard({ org, index, onUpdate, onDelete }) {
 
         {/* Icon + Name */}
         <div className="flex items-center gap-4 mb-3">
-          <div
-            className={`w-12 h-12 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 ${icon.bg}`}
-          >
-            <div className={`${icon.color} w-6 h-6`}>{icon.svg}</div>
+         <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 flex items-center justify-center">
+            {orgImage ? (
+              <img
+                src={orgImage}
+                alt={org.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-gray-400 text-xs">No Image</span>
+            )}
           </div>
 
           <h2 className="font-bold text-xl text-gray-800 dark:text-white">
