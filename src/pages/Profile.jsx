@@ -76,35 +76,33 @@ export default function Profile() {
   };
 
   const handleSave = async () => {
-    if (isSaving) {
-      // Prevent multiple clicks while saving
-      return;
-    }
+    if (isSaving) return;
 
     setIsSaving(true);
 
-    if (user && name !== user.displayName) {
-      try {
-        console.log("Updating profile...");
+    try {
+      console.log("Saving profile...");
 
+      // 1. Update auth name only if changed
+      if (name !== user.displayName) {
         await updateProfile(user, { displayName: name });
-
-        const userRef = ref(db, "users/" + user.uid);
-        await update(userRef, {
-          fullName: name,
-          email: user.email,
-          profilePic: profilePicPreview || profilePic || "",
-        });
-
-        console.log("Profile updated successfully.");
-        alert("Profile updated successfully!");
-      } catch (error) {
-        console.error("Error updating profile:", error);
-        alert("Error updating profile.");
-      } finally {
-        setIsSaving(false);
       }
-    } else {
+
+      // 2. ALWAYS update database (name + image)
+      const userRef = ref(db, "users/" + user.uid);
+
+      await update(userRef, {
+        fullName: name,
+        email: user.email,
+        profilePic: profilePicPreview || "",
+      });
+
+      console.log("Saved successfully");
+      alert("Profile updated!");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to update profile");
+    } finally {
       setIsSaving(false);
     }
   };
@@ -168,10 +166,6 @@ export default function Profile() {
   if (loading) {
     return <div>Loading...</div>;
   }
-
-  console.log("USER:", user);
-  console.log("PROFILE PIC:", profilePic);
-  console.log("PREVIEW:", profilePicPreview);
 
   return (
     <div className="container mx-auto p-4">
