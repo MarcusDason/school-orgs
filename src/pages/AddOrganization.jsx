@@ -132,10 +132,10 @@ export default function AddOrganization() {
         const newMemberRef = push(membersRef);
 
         await set(newMemberRef, {
-            fullName: m.fullName,
-            position: m.position,
-            profilePic: m.profilePic,
-            orgId: orgId,
+          fullName: m.fullName || "",
+          position: m.position || "",
+          profilePic: m.profilePic || "",
+          orgId: orgId,
         });
 
         memberCount++;
@@ -160,6 +160,8 @@ export default function AddOrganization() {
         console.error("Error saving organization:", err);
     }
   };
+
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6 transition-colors">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -278,8 +280,13 @@ export default function AddOrganization() {
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSubmit={(userWithPosition) => {
-            // Add user with position
-            setMembers((prevMembers) => [...prevMembers, userWithPosition]);
+            console.log("MEMBER FROM MODAL:", userWithPosition);
+
+            setMembers((prevMembers) => [
+              ...prevMembers,
+              userWithPosition,
+            ]);
+
             setIsModalOpen(false);
           }}
           existingMembers={members}
