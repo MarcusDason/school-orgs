@@ -49,8 +49,8 @@ export default function Profile() {
         console.log("PROFILE DATA:", data); // DEBUG
 
         setName(data.fullName || "");
-        setProfilePic(data.profilePic || null);
-        setProfilePicPreview(data.profilePic || null);
+        setProfilePic(data.profilePic || "");
+        setProfilePicPreview(data.profilePic || "");
       }
 
       setLoading(false);
@@ -88,6 +88,7 @@ export default function Profile() {
         });
 
         setProfilePicPreview(downloadURL);
+        setProfilePic(downloadURL);
         alert("Profile picture updated!");
       }
     );
@@ -113,7 +114,7 @@ export default function Profile() {
         await update(userRef, {
           fullName: name,
           email: user.email,
-          profilePic: profilePicPreview,
+          profilePic: profilePicPreview || profilePic || "",
         });
 
         console.log("Profile updated successfully.");
