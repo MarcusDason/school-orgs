@@ -23,7 +23,9 @@ export default function Profile() {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [currentPasswordError, setCurrentPasswordError] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState("");
+  const [confirmPasswordError, setConfirmPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
   const navigate = useNavigate();
 
@@ -123,31 +125,23 @@ export default function Profile() {
   };
 
   const handleChangePassword = async () => {
-    setPasswordError("");
+    setCurrentPasswordError("");
+    setNewPasswordError("");
+    setConfirmPasswordError("");
     setPasswordSuccess("");
 
     try {
       if (!currentPassword) {
-        setPasswordSuccess("");
-        setPasswordError("Please enter your current password.");
+        setCurrentPasswordError("Please enter your current password.");
         return;
       }
 
       if (newPassword.length < 6) {
-        setPasswordSuccess("");
-        setPasswordError("New password must be at least 6 characters.");
+        setNewPasswordError("Password must be at least 6 characters.");
         return;
       }
       if (newPassword !== confirmNewPassword) {
-        setPasswordSuccess("");
-        setPasswordError("Passwords do not match.");
-        return;
-      }
-
-      if (currentPassword === newPassword) {
-        setPasswordError(
-          "New password must be different from your current password."
-        );
+        setConfirmPasswordError("Passwords do not match.");
         return;
       }
 
@@ -171,16 +165,17 @@ export default function Profile() {
       switch (error.code) {
         case "auth/wrong-password":
         case "auth/invalid-credential":
-          setPasswordError("Current password is incorrect.");
+          setCurrentPasswordError("Current password is incorrect.");
           break;
 
         case "auth/weak-password":
-          setPasswordError("Password must be at least 6 characters.");
+          setNewPasswordError("Password must be at least 6 characters.");
           break;
 
         default:
-          setPasswordSuccess("");
-          setPasswordError("Failed to update password. Please try again.");
+        setCurrentPasswordError(
+          "Failed to update password. Please try again."
+        );
       }
     }
   };
@@ -255,47 +250,83 @@ export default function Profile() {
             Change Password
           </h3>
 
-          <input
-            type="password"
-            placeholder="Current Password"
-            value={currentPassword}
-            onChange={(e) => {
-              setCurrentPassword(e.target.value);
-              setPasswordError("");
-              setPasswordSuccess("");
-            }}
-            className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
-          />
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Current Password
+              </label>
 
-          <input
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={(e) => {
-              setNewPassword(e.target.value);
-              setPasswordError("");
-              setPasswordSuccess("");
-            }}
-            className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
-          />
+              {currentPasswordError && (
+                <span className="text-red-500 text-xs font-medium">
+                  {currentPasswordError}
+                </span>
+              )}
+            </div>
 
-          <input
-            type="password"
-            placeholder="Confirm New Password"
-            value={confirmNewPassword}
-            onChange={(e) => {
-              setConfirmNewPassword(e.target.value);
-              setPasswordError("");
-              setPasswordSuccess("");
-            }}
-            className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
-          />
+            <input
+              type="password"
+              placeholder="Current Password"
+              value={currentPassword}
+              onChange={(e) => {
+                setCurrentPassword(e.target.value);
+                setCurrentPasswordError("");
+                setPasswordSuccess("");
+              }}
+              className="w-full p-2 mt-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
 
-          {passwordError && (
-            <p className="text-red-500 text-sm mb-3">
-              {passwordError}
-            </p>
-          )}
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                New Password
+              </label>
+
+              {newPasswordError && (
+                <span className="text-red-500 text-xs font-medium">
+                  {newPasswordError}
+                </span>
+              )}
+            </div>
+
+            <input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setNewPasswordError("");
+                setPasswordSuccess("");
+              }}
+              className="w-full p-2 mt-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="mb-4">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Confirm New Password
+              </label>
+
+              {confirmPasswordError && (
+                <span className="text-red-500 text-xs font-medium">
+                  {confirmPasswordError}
+                </span>
+              )}
+            </div>
+
+            <input
+              type="password"
+              placeholder="Confirm New Password"
+              value={confirmNewPassword}
+              onChange={(e) => {
+                setConfirmNewPassword(e.target.value);
+                setConfirmPasswordError("");
+                setPasswordSuccess("");
+              }}
+              className="w-full p-2 mt-2 border rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
 
           {passwordSuccess && (
             <p className="text-green-500 text-sm mb-3">
