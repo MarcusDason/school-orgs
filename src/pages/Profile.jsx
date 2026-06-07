@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { auth, db, storage } from "../firebase/config"; // Firebase configuration
+import { auth, db, storage } from "../firebase/config"; 
 import { useNavigate } from "react-router-dom";
 import {
   onAuthStateChanged,
@@ -10,19 +10,21 @@ import {
 } from "firebase/auth";
 import { ref, get, update } from "firebase/database";
 import { User } from "lucide-react";
-import { uploadBytesResumable, getDownloadURL, ref as storageRef } from "firebase/storage"; // Import storage functions
+import { uploadBytesResumable, getDownloadURL, ref as storageRef } from "firebase/storage"; 
 
 export default function Profile() {
   const [user, setUser] = useState(null);
-  const [name, setName] = useState(""); // Name state to display
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false); // Add a state for saving indicator
-  const [profilePic, setProfilePic] = useState(null); // State to store profile image
-  const [profilePicPreview, setProfilePicPreview] = useState(null); // Preview the uploaded image
+  const [isSaving, setIsSaving] = useState(false); 
+  const [profilePic, setProfilePic] = useState(null); 
+  const [profilePicPreview, setProfilePicPreview] = useState(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordSuccess, setPasswordSuccess] = useState("");
   const navigate = useNavigate();
 
   // Fetch user info when the component mounts
@@ -32,34 +34,30 @@ export default function Profile() {
         setUser(currentUser);
         setEmail(currentUser.email);
 
-        // Fetch the fullName and profilePic from the Realtime Database
         const userRef = ref(db, "users/" + currentUser.uid);
         const snapshot = await get(userRef);
         const userData = snapshot.val();
         
         if (userData) {
-          setName(userData.fullName); // Set the fullName from the database
-          setProfilePic(userData.profilePic); // Set the profilePic URL from the database
+          setName(userData.fullName);
+          setProfilePic(userData.profilePic);
           if (userData.profilePic) {
-            setProfilePicPreview(userData.profilePic); // Set profile pic preview if exists
+            setProfilePicPreview(userData.profilePic);
           }
         }
       } else {
-        navigate("/login"); // Redirect to login if user is not authenticated
+        navigate("/login");
       }
       setLoading(false);
     });
 
-    // Cleanup on unmount
     return () => unsubscribe();
   }, [navigate]);
 
-  // Handle image upload
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) return;
 
-    // Create a storage reference
     const storageReference = storageRef(storage, `profile_pics/${user.uid}`);
 
     const uploadTask = uploadBytesResumable(storageReference, file);
@@ -73,10 +71,8 @@ export default function Profile() {
         console.error("Error uploading image:", error);
       },
       async () => {
-        // Get the uploaded image URL
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
 
-        // Set the image URL to Firebase Realtime Database
         const userRef = ref(db, "users/" + user.uid);
         await update(userRef, {
           fullName: name,
@@ -84,7 +80,6 @@ export default function Profile() {
           profilePic: downloadURL,
         });
 
-        // Update the profile picture preview
         setProfilePicPreview(downloadURL);
         alert("Profile picture updated!");
       }
@@ -128,17 +123,23 @@ export default function Profile() {
   };
 
   const handleChangePassword = async () => {
+    setPasswordError("");
+    setPasswordSuccess("");
+
     try {
       if (!currentPassword) {
-        return alert("Enter your current password");
+        setPasswordError("Please enter your current password.");
+        return;
       }
 
       if (newPassword.length < 6) {
-        return alert("New password must be at least 6 characters");
+        setPasswordError("New password must be at least 6 characters.");
+        return;
       }
 
       if (newPassword !== confirmNewPassword) {
-        return alert("Passwords do not match");
+        setPasswordError("Passwords do not match.");
+        return;
       }
 
       const credential = EmailAuthProvider.credential(
@@ -154,25 +155,22 @@ export default function Profile() {
       setNewPassword("");
       setConfirmNewPassword("");
 
-      alert("Password updated successfully!");
+      setPasswordSuccess("Password updated successfully!");
     } catch (error) {
       console.error(error);
 
       switch (error.code) {
         case "auth/wrong-password":
-          alert("Current password is incorrect.");
-          break;
-
         case "auth/invalid-credential":
-          alert("Current password is incorrect.");
+          setPasswordError("Current password is incorrect.");
           break;
 
         case "auth/weak-password":
-          alert("Password must be at least 6 characters.");
+          setPasswordError("Password must be at least 6 characters.");
           break;
 
         default:
-          alert(error.message);
+          setPasswordError(error.message);
       }
     }
   };
@@ -270,6 +268,18 @@ export default function Profile() {
             onChange={(e) => setConfirmNewPassword(e.target.value)}
             className="w-full p-2 mb-3 border rounded-lg dark:bg-gray-700 dark:text-white"
           />
+
+          {passwordError && (
+            <p className="text-red-500 text-sm mb-3">
+              {passwordError}
+            </p>
+          )}
+
+          {passwordSuccess && (
+            <p className="text-green-500 text-sm mb-3">
+              {passwordSuccess}
+            </p>
+          )}
 
           <button
             onClick={handleChangePassword}
