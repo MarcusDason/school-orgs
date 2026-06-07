@@ -1,24 +1,37 @@
 import React, { useState, useEffect } from "react";
 import { Plus, User } from "lucide-react";
 import { db } from "../firebase/config";
-import { ref, get, query, orderByChild, equalTo } from "firebase/database";
+import { ref, get } from "firebase/database";
 
-export default function AddMemberModal({ isOpen, onClose, onSubmit, existingMembers }) {
+export default function AddMemberModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  existingMembers,
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [memberPosition, setMemberPosition] = useState(""); // Added state for position
+
+  const [memberPosition, setMemberPosition] = useState("");
 
   useEffect(() => {
     if (!isOpen) {
       setSearchQuery("");
       setSearchResults([]);
+      setMemberPosition("");
     }
   }, [isOpen]);
+
+  // DEBUG: log position changes
+  useEffect(() => {
+    console.log("POSITION SELECTED:", memberPosition);
+  }, [memberPosition]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoading(true);
+
       try {
         const snapshot = await get(ref(db, "users"));
         const usersData = snapshot.val() || {};
@@ -32,12 +45,21 @@ export default function AddMemberModal({ isOpen, onClose, onSubmit, existingMemb
           }))
           .filter((user) => {
             if (!user.fullName) return false;
-            if (!searchQuery || !user.fullName.toLowerCase().includes(searchQuery.trim().toLowerCase())) {
+
+            if (
+              searchQuery &&
+              !user.fullName
+                .toLowerCase()
+                .includes(searchQuery.trim().toLowerCase())
+            ) {
               return false;
             }
-            // Exclude members already in the organization
-            const alreadyMember = existingMembers.some(m => m.uid === user.uid);
+
+            const alreadyMember = existingMembers.some(
+              (m) => m.uid === user.uid
+            );
             if (alreadyMember) return false;
+
             return true;
           })
           .sort((a, b) => a.fullName.localeCompare(b.fullName));
@@ -55,31 +77,77 @@ export default function AddMemberModal({ isOpen, onClose, onSubmit, existingMemb
 
   if (!isOpen) return null;
 
+  const handleAdd = (user) => {
+    console.log("TRYING TO ADD:", user);
+    console.log("SELECTED POSITION:", memberPosition);
+
+    if (!memberPosition) {
+      alert("Please select a position first");
+      return;
+    }
+
+    const newMember = {
+      ...user,
+      position: memberPosition,
+    };
+
+    console.log("FINAL MEMBER OBJECT:", newMember);
+
+    onSubmit(newMember);
+  };
+
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-96 max-h-[80vh] overflow-y-auto shadow-xl">
+
+        {/* HEADER */}
         <div className="flex gap-2 items-center">
           <User className="w-8 h-8 text-black mb-2 dark:text-white" />
-          <h2 className="text-xl font-bold mb-4 dark:text-white">Add Member</h2>
+          <h2 className="text-xl font-bold mb-4 dark:text-white">
+            Add Member
+          </h2>
         </div>
 
+        {/* SEARCH */}
         <input
           type="text"
           placeholder="Search users..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full p-2 mb-4 border rounded dark:bg-gray-700 dark:text-white"
+          className="w-full p-2 mb-3 border rounded dark:bg-gray-700 dark:text-white"
         />
 
-        {isLoading && <div className="text-gray-500 mb-2 text-sm">Searching...</div>}
-        {!isLoading && searchResults.length === 0 && <div className="text-gray-500 text-sm mb-2">No users found.</div>}
+        {/* POSITION SELECT (FIXED - REQUIRED FIRST) */}
+        <select
+          value={memberPosition}
+          onChange={(e) => setMemberPosition(e.target.value)}
+          className="w-full p-2 mb-4 border rounded dark:bg-gray-700 dark:text-white"
+        >
+          <option value="">Select Position</option>
+          <option value="President">President</option>
+          <option value="Vice President">Vice President</option>
+          <option value="Secretary">Secretary</option>
+          <option value="Treasurer">Treasurer</option>
+          <option value="Member">Member</option>
+        </select>
 
+        {/* LOADING */}
+        {isLoading && (
+          <div className="text-gray-500 mb-2 text-sm">Searching...</div>
+        )}
+
+        {!isLoading && searchResults.length === 0 && (
+          <div className="text-gray-500 text-sm mb-2">No users found.</div>
+        )}
+
+        {/* USERS LIST */}
         <div className="flex flex-col gap-2">
           {searchResults.map((user) => (
             <div
               key={user.uid}
               className="flex items-center justify-between p-3 rounded-lg border dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
             >
+              {/* USER INFO */}
               <div className="flex items-center gap-3">
                 {user.profilePic ? (
                   <img
@@ -92,14 +160,18 @@ export default function AddMemberModal({ isOpen, onClose, onSubmit, existingMemb
                     {user.fullName?.[0]?.toUpperCase() || "?"}
                   </div>
                 )}
+
                 <div>
-                  <div className="font-medium dark:text-white">{user.fullName}</div>
+                  <div className="font-medium dark:text-white">
+                    {user.fullName}
+                  </div>
                   <div className="text-xs text-gray-500">{user.email}</div>
                 </div>
               </div>
 
+              {/* ADD BUTTON */}
               <button
-                onClick={() => onSubmit(user, memberPosition)} // Pass the selected position to onSubmit
+                onClick={() => handleAdd(user)}
                 className="flex gap-2 items-center px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition"
               >
                 <Plus className="w-4 h-4" />
@@ -109,22 +181,7 @@ export default function AddMemberModal({ isOpen, onClose, onSubmit, existingMemb
           ))}
         </div>
 
-        <div className="mt-4">
-          {/* Dropdown for position */}
-          <select
-            value={memberPosition}
-            onChange={(e) => setMemberPosition(e.target.value)} // Update state with selected position
-            className="w-full p-2 border rounded dark:bg-gray-700 dark:text-white"
-          >
-            <option value="">Select Position</option>
-            <option value="President">President</option>
-            <option value="Vice President">Vice President</option>
-            <option value="Secretary">Secretary</option>
-            <option value="Treasurer">Treasurer</option>
-            <option value="Member">Member</option>
-          </select>
-        </div>
-
+        {/* CLOSE */}
         <div className="flex justify-end mt-4">
           <button
             onClick={onClose}

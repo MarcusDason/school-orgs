@@ -279,13 +279,14 @@ export default function AddOrganization() {
         <AddMemberModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          onSubmit={(userWithPosition) => {
-            console.log("MEMBER FROM MODAL:", userWithPosition);
+          onSubmit={(newMember) => {
+            console.log("MEMBER RECEIVED IN PARENT:", newMember);
 
-            setMembers((prevMembers) => [
-              ...prevMembers,
-              userWithPosition,
-            ]);
+            setMembers((prevMembers) => {
+              const updated = [...prevMembers, newMember];
+              console.log("UPDATED MEMBERS LIST:", updated);
+              return updated;
+            });
 
             setIsModalOpen(false);
           }}
