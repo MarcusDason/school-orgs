@@ -378,13 +378,6 @@ export default function OrganizationDetail() {
         </div>
 
       </div>
-
-      {/* CTA */}
-      <div className="mt-auto pt-12 bg-blue-600 text-white p-6 rounded-lg text-center">
-        <h3 className="text-2xl font-bold mb-2">Interested in Joining?</h3>
-        <p>Connect with us to learn more about {org.name}.</p>
-        <button className="mt-4 px-6 py-2 bg-white text-blue-600 font-semibold rounded">Contact Us</button>
-      </div>
     </div>
   );
 }
