@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { auth, db, storage } from "../firebase/config"; // Firebase configuration
 import { useNavigate } from "react-router-dom";
-import { onAuthStateChanged, updateProfile } from "firebase/auth";
+import {
+  onAuthStateChanged,
+  updateProfile,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from "firebase/auth";
 import { ref, get, update } from "firebase/database";
 import { User } from "lucide-react";
 import { uploadBytesResumable, getDownloadURL, ref as storageRef } from "firebase/storage"; // Import storage functions
@@ -14,6 +20,10 @@ export default function Profile() {
   const [isSaving, setIsSaving] = useState(false); // Add a state for saving indicator
   const [profilePic, setProfilePic] = useState(null); // State to store profile image
   const [profilePicPreview, setProfilePicPreview] = useState(null); // Preview the uploaded image
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
   const navigate = useNavigate();
 
   // Fetch user info when the component mounts
@@ -118,6 +128,49 @@ export default function Profile() {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      return alert("Please fill in all password fields.");
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      return alert("New passwords do not match.");
+    }
+
+    if (newPassword.length < 6) {
+      return alert("Password must be at least 6 characters.");
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        currentPassword
+      );
+
+      await reauthenticateWithCredential(user, credential);
+
+      await updatePassword(user, newPassword);
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+
+      alert("Password changed successfully!");
+    } catch (error) {
+      console.error(error);
+
+      if (error.code === "auth/wrong-password") {
+        alert("Current password is incorrect.");
+      } else {
+        alert(error.message);
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -182,6 +235,52 @@ export default function Profile() {
               className="w-full p-2 mt-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
             />
           </div>
+
+          <hr className="my-6" />
+
+          <h3 className="text-lg font-semibold mb-4 text-gray-800 dark:text-white">
+            Change Password
+          </h3>
+
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Current Password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Confirm New Password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg dark:bg-gray-700 dark:text-white"
+            />
+          </div>
+
+          <button
+            onClick={handleChangePassword}
+            disabled={isChangingPassword}
+            className={`w-full p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 ${
+              isChangingPassword ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {isChangingPassword ? "Changing..." : "Change Password"}
+          </button>
 
           {/* Save Button */}
           <button
