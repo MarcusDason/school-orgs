@@ -10,7 +10,7 @@ import {
 } from "firebase/auth";
 import { ref, get, update } from "firebase/database";
 import { User } from "lucide-react";
-import { uploadBytesResumable, getDownloadURL, ref as storageRef } from "firebase/storage"; 
+// import { uploadBytesResumable, getDownloadURL, ref as storageRef } from "firebase/storage"; 
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -59,39 +59,30 @@ export default function Profile() {
     return () => unsubscribe();
   }, [navigate]);
 
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) return;
 
-    const storageReference = storageRef(storage, `profile_pics/${user.uid}`);
+    const reader = new FileReader();
 
-    const uploadTask = uploadBytesResumable(storageReference, file);
+    reader.onloadend = async () => {
+      const base64Image = reader.result;
 
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        // You can monitor the upload progress here
-      },
-      (error) => {
-        console.error("Error uploading image:", error);
-      },
-      async () => {
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-        
-        console.log("UPLOADED IMAGE URL:", downloadURL);
+      setProfilePicPreview(base64Image);
+      setProfilePic(base64Image);
 
-        const userRef = ref(db, "users/" + user.uid);
-        await update(userRef, {
-          fullName: name,
-          email: user.email,
-          profilePic: downloadURL || "",
-        });
+      const userRef = ref(db, "users/" + user.uid);
 
-        setProfilePicPreview(downloadURL);
-        setProfilePic(downloadURL);
-        alert("Profile picture updated!");
-      }
-    );
+      await update(userRef, {
+        fullName: name,
+        email: user.email,
+        profilePic: base64Image,
+      });
+
+      alert("Profile picture updated!");
+    };
+
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async () => {
@@ -114,7 +105,7 @@ export default function Profile() {
         await update(userRef, {
           fullName: name,
           email: user.email,
-          profilePic: profilePicPreview || profilePic || "",
+          profilePic: profilePic || profilePicPreview || "",
         });
 
         console.log("Profile updated successfully.");
