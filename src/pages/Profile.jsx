@@ -32,24 +32,27 @@ export default function Profile() {
   // Fetch user info when the component mounts
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        setEmail(currentUser.email);
-
-        const userRef = ref(db, "users/" + currentUser.uid);
-        const snapshot = await get(userRef);
-        const userData = snapshot.val();
-        
-        if (userData) {
-          setName(userData.fullName);
-          setProfilePic(userData.profilePic);
-          if (userData.profilePic) {
-            setProfilePicPreview(userData.profilePic);
-          }
-        }
-      } else {
+      if (!currentUser) {
         navigate("/login");
+        return;
       }
+
+      setUser(currentUser);
+      setEmail(currentUser.email);
+
+      const userRef = ref(db, "users/" + currentUser.uid);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+
+        console.log("PROFILE DATA:", data); // DEBUG
+
+        setName(data.fullName || "");
+        setProfilePic(data.profilePic || null);
+        setProfilePicPreview(data.profilePic || null);
+      }
+
       setLoading(false);
     });
 
@@ -74,12 +77,14 @@ export default function Profile() {
       },
       async () => {
         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        
+        console.log("UPLOADED IMAGE URL:", downloadURL);
 
         const userRef = ref(db, "users/" + user.uid);
         await update(userRef, {
           fullName: name,
           email: user.email,
-          profilePic: downloadURL,
+          profilePic: downloadURL || "",
         });
 
         setProfilePicPreview(downloadURL);
@@ -183,6 +188,10 @@ export default function Profile() {
   if (loading) {
     return <div>Loading...</div>;
   }
+
+  console.log("USER:", user);
+  console.log("PROFILE PIC:", profilePic);
+  console.log("PREVIEW:", profilePicPreview);
 
   return (
     <div className="container mx-auto p-4">
